@@ -1,0 +1,73 @@
+﻿
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="PlanAotuCAD.MainPage"
+    BackgroundColor="#171B24">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- الشريط العلوي -->
+        <Grid Grid.Row="0"
+              BackgroundColor="#222936"
+              Padding="12"
+              ColumnDefinitions="*,Auto,Auto,Auto">
+
+            <Label Text="PlanAotuCAD"
+                   TextColor="White"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center" />
+
+            <Label Grid.Column="1"
+                   Text="CAD Workspace"
+                   TextColor="#9BA8B8"
+                   FontSize="12"
+                   VerticalOptions="Center"
+                   Margin="0,0,15,0" />
+
+            <Button Grid.Column="2"
+                    x:Name="LineButton"
+                    Text="LINE"
+                    BackgroundColor="#3B82F6"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    Clicked="OnLineToolClicked" />
+            <Button Grid.Column="3"
+                    x:Name="RectButton"
+                    Text="RECT"
+                    BackgroundColor="#3B82F6"
+                    TextColor="White"
+                    CornerRadius="6"
+                    Padding="18,8"
+                    Clicked="OnRectToolClicked" />
+        </Grid>
+
+        <!-- مساحة الرسم -->
+        <GraphicsView
+            x:Name="CadView"
+            Grid.Row="1"
+            HorizontalOptions="Fill"
+            VerticalOptions="Fill" />
+
+        <!-- شريط الحالة -->
+        <Grid Grid.Row="2"
+              BackgroundColor="#222936"
+              Padding="10"
+              ColumnDefinitions="*,Auto">
+
+            <Label x:Name="StatusLabel"
+                   Text="Ready"
+                   TextColor="#AAB6C5"
+                   FontSize="12"
+                   VerticalOptions="Center" />
+
+            <Label Grid.Column="1"
+                   Text="Units: Meter"
+                   TextColor="#AAB6C5"
+                   FontSize="12"
+                   VerticalOptions="Center" />
+        </Grid>
+
+    </Grid>
+</ContentPage>
