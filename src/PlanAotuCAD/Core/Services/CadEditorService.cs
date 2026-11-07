@@ -133,11 +133,22 @@ public sealed class CadEditorService
 
     private static bool IsValid(CadEntity entity) => entity switch
     {
-        CadLine line => Distance(
-            new PointF(line.StartX, line.StartY),
-            new PointF(line.EndX, line.EndY)) > 0.001f,
-        CadRectangle rectangle => rectangle.Width > 0.001f && rectangle.Height > 0.001f,
-        CadCircle circle => circle.Radius > 0.001f,
+        CadLine line =>
+            float.IsFinite(line.StartX) && float.IsFinite(line.StartY) &&
+            float.IsFinite(line.EndX) && float.IsFinite(line.EndY) &&
+            Distance(
+                new PointF(line.StartX, line.StartY),
+                new PointF(line.EndX, line.EndY)) > 0.001f,
+
+        CadRectangle rectangle =>
+            float.IsFinite(rectangle.StartX) && float.IsFinite(rectangle.StartY) &&
+            float.IsFinite(rectangle.EndX) && float.IsFinite(rectangle.EndY) &&
+            rectangle.Width > 0.001f && rectangle.Height > 0.001f,
+
+        CadCircle circle =>
+            float.IsFinite(circle.CenterX) && float.IsFinite(circle.CenterY) &&
+            float.IsFinite(circle.Radius) && circle.Radius > 0.001f,
+
         _ => false
     };
 

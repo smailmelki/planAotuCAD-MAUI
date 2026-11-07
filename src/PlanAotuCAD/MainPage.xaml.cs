@@ -170,7 +170,9 @@ public partial class MainPage : ContentPage
         var expectedCount = _editor.ActiveTool == CadTool.Circle ? 3 : 4;
 
         if (values.Length != expectedCount ||
-            values.Any(value => !float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))
+            values.Any(value =>
+                !float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ||
+                !float.IsFinite(parsed)))
         {
             await DisplayAlert("قيم غير صحيحة", $"أدخل {expectedCount} أرقام مفصولة بالفاصلة المنقوطة (;). استخدم النقطة للفواصل العشرية.", "موافق");
             return;
@@ -179,6 +181,20 @@ public partial class MainPage : ContentPage
         var numbers = values
             .Select(value => float.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture))
             .ToArray();
+
+        var dimensionsArePositive = _editor.ActiveTool switch
+        {
+            CadTool.Line => numbers[2] > 0,
+            CadTool.Rectangle => numbers[2] > 0 && numbers[3] > 0,
+            CadTool.Circle => numbers[2] > 0,
+            _ => false
+        };
+
+        if (!dimensionsArePositive)
+        {
+            await DisplayAlert("أبعاد غير صالحة", "يجب أن يكون الطول والعرض والارتفاع ونصف القطر أكبر من صفر.", "موافق");
+            return;
+        }
 
         CadEntity entity = _editor.ActiveTool switch
         {

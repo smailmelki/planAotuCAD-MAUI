@@ -171,12 +171,14 @@ public sealed class CadDxfService
         foreach (var pair in data)
         {
             if (pair.Key == 10 &&
-                float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var x))
+                float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var x) &&
+                float.IsFinite(x))
             {
                 currentX = x;
             }
             else if (pair.Key == 20 && currentX.HasValue &&
-                     float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+                     float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var y) &&
+                     float.IsFinite(y))
             {
                 vertices.Add((currentX.Value, y));
                 currentX = null;
@@ -201,7 +203,8 @@ public sealed class CadDxfService
         out float value)
     {
         var pair = data.FirstOrDefault(item => item.Key == code);
-        return float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        return float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out value)
+               && float.IsFinite(value);
     }
 
     private static void WriteLine(StringBuilder output, float x1, float y1, float x2, float y2)
