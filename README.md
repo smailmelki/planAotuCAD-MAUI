@@ -1,2 +1,79 @@
-# planAotuCAD-MAUI
-Cross-platform 2D CAD application built with C# and .NET MAUI
+# PlanAotuCAD
+
+تطبيق CAD ثنائي الأبعاد متعدد المنصات مبني باستخدام **C# و.NET MAUI**.
+
+## الهدف المعماري
+
+يعتمد المشروع على فصل مسؤوليات التطبيق حتى تبقى إضافة الأدوات والميزات ممكنة دون تضخيم صفحة الواجهة:
+
+- **UI**: ملفات XAML وMainPage مسؤولة عن عرض الأدوات واستقبال أحداث المنصة.
+- **Core/Models**: نماذج عناصر الرسم والمستند.
+- **Core/Tools**: تعريف أدوات التحرير.
+- **Core/Geometry**: تحويل الإحداثيات بين الشاشة ومساحة الرسم.
+- **Core/Services**: تنفيذ عمليات التحرير وإدارة ملفات المستند.
+- **Core/Drawing**: رسم المستند على GraphicsView فقط.
+
+## البنية الحالية
+
+```text
+src/PlanAotuCAD/
+├── Core/
+│   ├── Drawing/
+│   │   └── CadCanvasDrawable.cs
+│   ├── Geometry/
+│   │   └── CadCoordinateTransformer.cs
+│   ├── Models/
+│   │   ├── CadEntity.cs
+│   │   ├── CadLine.cs
+│   │   ├── CadRectangle.cs
+│   │   ├── CadCircle.cs
+│   │   └── CadDocument.cs
+│   ├── Services/
+│   │   ├── CadEditorService.cs
+│   │   └── CadDocumentStorage.cs
+│   └── Tools/
+│       └── CadTool.cs
+├── MainPage.xaml
+└── MainPage.xaml.cs
+```
+
+## الأدوات المتوفرة
+
+- تحديد العنصر بالنقر عليه.
+- تحريك العنصر المحدد بالسحب.
+- حذف العنصر المحدد.
+- رسم الخطوط والمستطيلات والدوائر.
+- إدخال رقمي مستقل عن اللمس والماوس للخط (X/Y/Length/Angle) والمستطيل (X/Y/Width/Height) والدائرة (Center X/Center Y/Radius).
+- تكبير وتصغير مساحة الرسم بعجلة الفأرة حول موضع المؤشر على Windows.
+- تكبير مساحة الرسم بإيماءة القرص بإصبعين (Pinch) على الأجهزة اللمسية.
+- تحريك مساحة الرسم بزر الفأرة الأوسط على Windows.
+- حفظ المستند بصيغة JSON وفتحه من ملف JSON.
+- استيراد وتصدير DXF الأساسي لعناصر LINE وCIRCLE وLWPOLYLINE؛ تُحوّل المستطيلات عند التصدير إلى أربعة خطوط.
+
+## مبدأ إضافة أداة جديدة
+
+1. إنشاء نموذج جديد يرث من `CadEntity`.
+2. تنفيذ `HitTest` و`Move` في النموذج.
+3. إضافة نوع الأداة إلى `CadTool`.
+4. إضافة إنشاء العنصر ومعاينته في `CadEditorService`.
+5. إضافة طريقة رسم النموذج في `CadCanvasDrawable`.
+6. إضافة زر الأداة في `MainPage.xaml` وربطه باختيار الأداة.
+
+بهذا الترتيب تبقى هندسة العناصر مستقلة عن الواجهة وعن طريقة استقبال اللمس أو الماوس.
+
+## البناء
+
+من مجلد المشروع:
+
+```powershell
+dotnet restore
+dotnet build -f net10.0-windows10.0.19041.0
+```
+
+ولأندرويد:
+
+```powershell
+dotnet build -f net10.0-android
+```
+
+> ملاحظة: الحفظ الحالي ينشئ ملفات JSON داخل مجلد بيانات التطبيق، بينما الفتح يسمح باختيار ملف JSON. يدعم DXF حالياً كيانات LINE وCIRCLE وLWPOLYLINE عند الاستيراد، ويصدر الخطوط والدوائر والمستطيلات (كمجموعة خطوط). الأقواس والمضلعات كعناصر أصلية، الإدخال الرقمي للأبعاد، الطبقات والتراجع/الإعادة مراحل تطوير تالية.

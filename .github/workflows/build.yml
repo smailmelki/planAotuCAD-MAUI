@@ -1,0 +1,57 @@
+name: Build MAUI targets
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main, feature/cad-core-architecture ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI Windows workload
+        run: dotnet workload install maui-windows
+
+      - name: Restore
+        run: dotnet restore src/PlanAotuCAD/PlanAotuCAD.csproj
+
+      - name: Build
+        run: dotnet build src/PlanAotuCAD/PlanAotuCAD.csproj -f net10.0-windows10.0.19041.0 --no-restore
+
+  build-android:
+    name: Build Android
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android
+
+      - name: Restore
+        run: dotnet restore src/PlanAotuCAD/PlanAotuCAD.csproj
+
+      - name: Build
+        run: dotnet build src/PlanAotuCAD/PlanAotuCAD.csproj -f net10.0-android --no-restore
