@@ -88,6 +88,9 @@ public partial class MainPage : ContentPage
     private void OnCanvasStart(object? sender, TouchEventArgs e)
     {
         var touches = e.Touches.ToArray();
+        if (touches.Length == 0)
+            return;
+
 		if (_rectToolActive)
 {
     _rectangleStartPoint = ScreenToWorld(touches[0]);
@@ -124,6 +127,8 @@ public partial class MainPage : ContentPage
     private void OnCanvasDrag(object? sender, TouchEventArgs e)
     {
         var touches = e.Touches.ToArray();
+        if (touches.Length == 0)
+            return;
 
 	if (_isDrawingRectangle)
 {
@@ -156,6 +161,8 @@ public partial class MainPage : ContentPage
     private void OnCanvasEnd(object? sender, TouchEventArgs e)
     {
         var touches = e.Touches.ToArray();
+        if (touches.Length == 0)
+            return;
 
 		if (_isDrawingRectangle)
 	{
