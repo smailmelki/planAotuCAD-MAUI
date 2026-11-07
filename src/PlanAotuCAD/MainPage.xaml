@@ -35,9 +35,9 @@
                     <Button x:Name="CircleButton" Text="CIRCLE" Clicked="OnCircleToolClicked" />
                     <Button Text="NUMERIC" Clicked="OnNumericInputClicked" />
                     <Button Text="DELETE" BackgroundColor="#B91C1C" Clicked="OnDeleteClicked" />
-                    <Button Text="OPEN JSON" Clicked="OnOpenClicked" />
+                    <Button Text="OPEN DRAWING" Clicked="OnOpenClicked" />
                     <Button Text="IMPORT DXF" Clicked="OnImportDxfClicked" />
-                    <Button Text="SAVE JSON" BackgroundColor="#15803D" Clicked="OnSaveClicked" />
+                    <Button Text="SAVE DRAWING" BackgroundColor="#15803D" Clicked="OnSaveClicked" />
                     <Button Text="EXPORT DXF" BackgroundColor="#15803D" Clicked="OnExportDxfClicked" />
                 </HorizontalStackLayout>
             </ScrollView>

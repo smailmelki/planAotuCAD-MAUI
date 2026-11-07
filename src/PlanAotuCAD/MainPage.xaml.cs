@@ -236,8 +236,8 @@ public partial class MainPage : ContentPage
     {
         try
         {
-            var path = await _storage.SaveAsync(_editor.Document);
-            StatusLabel.Text = $"تم حفظ الرسم: {Path.GetFileName(path)}";
+            var fileName = await _storage.SaveAsync(_editor.Document);
+            StatusLabel.Text = $"تم حفظ الرسم: {fileName}";
         }
         catch (Exception ex)
         {
@@ -247,9 +247,59 @@ public partial class MainPage : ContentPage
 
     private async void OnOpenClicked(object? sender, EventArgs e)
     {
+        var choice = await DisplayActionSheet(
+            "فتح رسم",
+            "إلغاء",
+            null,
+            "الرسومات المحفوظة",
+            "فتح ملف JSON خارجي");
+
+        if (choice == "إلغاء" || string.IsNullOrEmpty(choice))
+            return;
+
         try
         {
-            var document = await _storage.OpenAsync();
+            CadDocument? document;
+
+            if (choice == "الرسومات المحفوظة")
+            {
+                var drawings = await _storage.GetSavedDrawingsAsync();
+
+                if (drawings.Count == 0)
+                {
+                    await DisplayAlert(
+                        "الرسومات المحفوظة",
+                        "لا توجد رسومات محفوظة داخل التطبيق حتى الآن.",
+                        "موافق");
+                    return;
+                }
+
+                var labels = drawings
+                    .Select(drawing =>
+                        $"{drawing.Name} — {drawing.LastModifiedUtc.ToLocalTime():dd/MM/yyyy HH:mm}")
+                    .ToArray();
+
+                var selectedLabel = await DisplayActionSheet(
+                    "اختر الرسم الذي تريد فتحه",
+                    "إلغاء",
+                    null,
+                    labels);
+
+                var selectedIndex = Array.IndexOf(labels, selectedLabel);
+                if (selectedIndex < 0)
+                    return;
+
+                document = await _storage.OpenSavedAsync(drawings[selectedIndex].FileName);
+            }
+            else if (choice == "فتح ملف JSON خارجي")
+            {
+                document = await _storage.OpenExternalAsync();
+            }
+            else
+            {
+                return;
+            }
+
             if (document is null)
                 return;
 
@@ -261,7 +311,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("تعذر فتح الملف", ex.Message, "موافق");
+            await DisplayAlert("تعذر فتح الرسم", ex.Message, "موافق");
         }
     }
 
