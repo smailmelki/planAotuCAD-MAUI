@@ -51,6 +51,9 @@ public void Draw(ICanvas canvas, RectF dirtyRect)
 }
 private void DrawGrid(ICanvas canvas, float width, float height)
 {
+    if (!float.IsFinite(Zoom) || Zoom <= 0f || !float.IsFinite(GridSpacing) || GridSpacing <= 0f)
+        return;
+
     float left = (-width / 2 - PanX) / Zoom;
     float right = (width / 2 - PanX) / Zoom;
 
@@ -92,7 +95,7 @@ private void DrawAxes(ICanvas canvas, float width, float height)
     private void DrawLines(ICanvas canvas, float width, float height)
 {
     canvas.StrokeColor = Color.FromArgb("#F4F6FA");
-    canvas.StrokeSize = 2;
+    canvas.StrokeSize = 2f / Zoom;
 
     // رسم الخطوط المحفوظة
     foreach (var line in Lines)
@@ -108,7 +111,7 @@ private void DrawAxes(ICanvas canvas, float width, float height)
     if (PreviewLine != null)
     {
         canvas.StrokeColor = Color.FromArgb("#FFD166");
-        canvas.StrokeSize = 2;
+        canvas.StrokeSize = 2f / Zoom;
 
         canvas.DrawLine(
             PreviewLine.StartX,
@@ -122,7 +125,7 @@ private void DrawAxes(ICanvas canvas, float width, float height)
 {
     // رسم المستطيلات المحفوظة
     canvas.StrokeColor = Color.FromArgb("#4ADE80");
-    canvas.StrokeSize = 2;
+    canvas.StrokeSize = 2f / Zoom;
 
     foreach (var rect in Rectangles)
     {
@@ -139,7 +142,7 @@ private void DrawAxes(ICanvas canvas, float width, float height)
         var rect = PreviewRectangle;
 
         canvas.StrokeColor = Color.FromArgb("#FFD166");
-        canvas.StrokeSize = 2;
+        canvas.StrokeSize = 2f / Zoom;
 
         canvas.DrawRectangle(
             rect.Left,
