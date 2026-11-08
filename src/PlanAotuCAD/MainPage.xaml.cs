@@ -88,8 +88,8 @@ public partial class MainPage : ContentPage
         RefreshCanvas();
     }
 
-    private static Color ActiveColor => Color.FromArgb("#16A34A");
-    private static Color InactiveColor => Color.FromArgb("#3B82F6");
+    private static Color ActiveColor => Color.FromArgb("#DCEFE8");
+    private static Color InactiveColor => Color.FromArgb("#F1F5F9");
 
     private void OnCanvasStart(object? sender, TouchEventArgs e)
     {
