@@ -180,6 +180,34 @@ public sealed class CadEditorService
         return true;
     }
 
+    public bool SetLayerColor(string layerId, string colorHex)
+    {
+        var layer = Document.Layers.FirstOrDefault(x => x.Id == layerId);
+        if (layer is null || string.IsNullOrWhiteSpace(colorHex) ||
+            !colorHex.StartsWith("#", StringComparison.Ordinal) ||
+            (colorHex.Length != 7 && colorHex.Length != 9))
+            return false;
+        var before = Snapshot();
+        layer.ColorHex = colorHex;
+        Record(before);
+        return true;
+    }
+
+    public bool MergeLayer(string sourceLayerId, string targetLayerId)
+    {
+        var source = Document.Layers.FirstOrDefault(x => x.Id == sourceLayerId);
+        var target = Document.Layers.FirstOrDefault(x => x.Id == targetLayerId);
+        if (source is null || target is null || source.Id == target.Id || source.Id == "0")
+            return false;
+        var before = Snapshot();
+        foreach (var entity in Document.Entities.Where(x => x.LayerId == sourceLayerId))
+            entity.LayerId = targetLayerId;
+        Document.Layers.Remove(source);
+        if (Document.ActiveLayerId == sourceLayerId) Document.ActiveLayerId = targetLayerId;
+        Record(before);
+        return true;
+    }
+
     public bool DeleteLayer(string layerId)
     {
         var layer = Document.Layers.FirstOrDefault(x => x.Id == layerId);
