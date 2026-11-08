@@ -42,6 +42,23 @@ public sealed class CadDxfService
     public string BuildDxf(CadDocument document)
     {
         var output = new StringBuilder();
+        // تعريف الطبقات أولاً حتى تتعرف برامج CAD على أسماء الطبقات المستخدمة في الكيانات.
+        AddPair(output, 0, "SECTION");
+        AddPair(output, 2, "TABLES");
+        AddPair(output, 0, "TABLE");
+        AddPair(output, 2, "LAYER");
+        AddPair(output, 70, document.Layers.Count.ToString(CultureInfo.InvariantCulture));
+        foreach (var layer in document.Layers)
+        {
+            AddPair(output, 0, "LAYER");
+            AddPair(output, 2, layer.Name);
+            AddPair(output, 70, "0");
+            AddPair(output, 62, "7");
+            AddPair(output, 6, "CONTINUOUS");
+        }
+        AddPair(output, 0, "ENDTAB");
+        AddPair(output, 0, "ENDSEC");
+
         AddPair(output, 0, "SECTION");
         AddPair(output, 2, "ENTITIES");
 
@@ -154,6 +171,13 @@ public sealed class CadDxfService
         string entityType,
         List<KeyValuePair<int, string>> data)
     {
+        var layerName = data.FirstOrDefault(item => item.Key == 8).Value;
+        if (string.IsNullOrWhiteSpace(layerName))
+            layerName = "0";
+
+        var layer = EnsureLayer(document, layerName);
+        CadEntity? entity = null;
+
         switch (entityType)
         {
             case "LINE":
@@ -161,28 +185,55 @@ public sealed class CadDxfService
                     TryGetFloat(data, 20, out var y1) &&
                     TryGetFloat(data, 11, out var x2) &&
                     TryGetFloat(data, 21, out var y2))
-                    document.Entities.Add(new CadLine(x1, y1, x2, y2));
+                    entity = new CadLine(x1, y1, x2, y2);
                 break;
 
             case "CIRCLE":
                 if (TryGetFloat(data, 10, out var cx) &&
                     TryGetFloat(data, 20, out var cy) &&
-                    TryGetFloat(data, 40, out var radius) &&
-                    radius > 0)
-                    document.Entities.Add(new CadCircle(cx, cy, radius));
+                    TryGetFloat(data, 40, out var radius) && radius > 0)
+                    entity = new CadCircle(cx, cy, radius);
+                break;
+
+            case "ARC":
+                if (TryGetFloat(data, 10, out var arcX) &&
+                    TryGetFloat(data, 20, out var arcY) &&
+                    TryGetFloat(data, 40, out var arcRadius) && arcRadius > 0 &&
+                    TryGetFloat(data, 50, out var startAngle) &&
+                    TryGetFloat(data, 51, out var endAngle))
+                {
+                    var sweep = (endAngle - startAngle + 360f) % 360f;
+                    if (sweep > 0.001f)
+                        entity = new CadArc
+                        {
+                            CenterX = arcX,
+                            CenterY = arcY,
+                            Radius = arcRadius,
+                            StartAngle = startAngle,
+                            SweepAngle = sweep
+                        };
+                }
+                break;
+
+            case "ELLIPSE":
+                entity = ImportEllipse(data);
                 break;
 
             case "LWPOLYLINE":
-                ImportPolyline(document, data);
+                entity = ImportPolyline(data);
                 break;
+        }
+
+        if (entity is not null)
+        {
+            entity.LayerId = layer.Id;
+            document.Entities.Add(entity);
         }
     }
 
-    private static void ImportPolyline(
-        CadDocument document,
-        List<KeyValuePair<int, string>> data)
+    private static CadPolyline? ImportPolyline(List<KeyValuePair<int, string>> data)
     {
-        var vertices = new List<(float X, float Y)>();
+        var polyline = new CadPolyline();
         float? currentX = null;
 
         foreach (var pair in data)
@@ -197,21 +248,69 @@ public sealed class CadDxfService
                      float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var y) &&
                      float.IsFinite(y))
             {
-                vertices.Add((currentX.Value, y));
+                polyline.Points.Add(new CadVertex(currentX.Value, y));
                 currentX = null;
             }
         }
 
-        var closed = TryGetFloat(data, 70, out var flags) && (((int)flags & 1) == 1);
-        for (var i = 1; i < vertices.Count; i++)
-            document.Entities.Add(new CadLine(vertices[i - 1].X, vertices[i - 1].Y, vertices[i].X, vertices[i].Y));
+        polyline.Closed = TryGetFloat(data, 70, out var flags) && (((int)flags & 1) == 1);
+        return polyline.Points.Count >= (polyline.Closed ? 3 : 2) ? polyline : null;
+    }
 
-        if (closed && vertices.Count > 2)
+    private static CadEllipse? ImportEllipse(List<KeyValuePair<int, string>> data)
+    {
+        if (!TryGetFloat(data, 10, out var centerX) ||
+            !TryGetFloat(data, 20, out var centerY) ||
+            !TryGetFloat(data, 11, out var majorX) ||
+            !TryGetFloat(data, 21, out var majorY) ||
+            !TryGetFloat(data, 40, out var ratio) ||
+            ratio <= 0 || ratio > 1)
+            return null;
+
+        // نموذج CadEllipse الحالي لا يخزن زاوية دوران؛ نقبل المحاور الأفقية/العمودية فقط
+        // بدلاً من استيراد شكل مائل بصورة هندسية خاطئة.
+        const float axisTolerance = 0.0001f;
+        if (MathF.Abs(majorX) > axisTolerance && MathF.Abs(majorY) > axisTolerance)
+            return null;
+
+        var majorRadius = MathF.Sqrt(majorX * majorX + majorY * majorY);
+        var minorRadius = majorRadius * ratio;
+        if (!float.IsFinite(majorRadius) || majorRadius <= 0 || minorRadius <= 0)
+            return null;
+
+        var start = TryGetFloat(data, 41, out var startParameter) ? startParameter : 0f;
+        var end = TryGetFloat(data, 42, out var endParameter) ? endParameter : MathF.PI * 2f;
+        if (MathF.Abs(start) > axisTolerance || MathF.Abs(end - MathF.PI * 2f) > axisTolerance)
+            return null;
+
+        return MathF.Abs(majorY) <= axisTolerance
+            ? new CadEllipse
+            {
+                CenterX = centerX, CenterY = centerY,
+                RadiusX = majorRadius, RadiusY = minorRadius
+            }
+            : new CadEllipse
+            {
+                CenterX = centerX, CenterY = centerY,
+                RadiusX = minorRadius, RadiusY = majorRadius
+            };
+    }
+
+    private static CadLayer EnsureLayer(CadDocument document, string name)
+    {
+        var existing = document.Layers.FirstOrDefault(layer =>
+            string.Equals(layer.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+            return existing;
+
+        var layer = new CadLayer
         {
-            var first = vertices[0];
-            var last = vertices[^1];
-            document.Entities.Add(new CadLine(last.X, last.Y, first.X, first.Y));
-        }
+            Id = Guid.NewGuid().ToString("N"),
+            Name = name,
+            ColorHex = "#F4F6FA"
+        };
+        document.Layers.Add(layer);
+        return layer;
     }
 
     private static bool TryGetFloat(
