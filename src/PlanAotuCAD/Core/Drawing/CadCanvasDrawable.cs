@@ -92,6 +92,9 @@ public sealed class CadCanvasDrawable : IDrawable
                  CadLine => Color.FromArgb("#F4F6FA"),
                  CadRectangle => Color.FromArgb("#4ADE80"),
                  CadCircle => Color.FromArgb("#60A5FA"),
+                CadEllipse => Color.FromArgb("#A78BFA"),
+                CadTriangle => Color.FromArgb("#F59E0B"),
+                CadArc => Color.FromArgb("#FB7185"),
                  _ => Colors.White
              });
 
@@ -112,6 +115,50 @@ public sealed class CadCanvasDrawable : IDrawable
                 else
                     canvas.DrawCircle(circle.CenterX, circle.CenterY, circle.Radius);
                 break;
+            case CadEllipse ellipse:
+                var ellipseRect = new RectF(ellipse.CenterX - ellipse.RadiusX, ellipse.CenterY - ellipse.RadiusY,
+                    ellipse.RadiusX * 2f, ellipse.RadiusY * 2f);
+                if (entity.IsFilled) canvas.FillEllipse(ellipseRect);
+                else canvas.DrawEllipse(ellipseRect);
+                break;
+            case CadTriangle triangle:
+                var a = triangle.A; var b = triangle.B; var c = triangle.C;
+                if (entity.IsFilled)
+                {
+                    var trianglePath = new PathF();
+                    trianglePath.MoveTo(a.X, a.Y);
+                    trianglePath.LineTo(b.X, b.Y);
+                    trianglePath.LineTo(c.X, c.Y);
+                    trianglePath.Close();
+                    canvas.FillPath(trianglePath);
+                }
+                else
+                {
+                    canvas.DrawLine(a, b);
+                    canvas.DrawLine(b, c);
+                    canvas.DrawLine(c, a);
+                }
+                break;
+            case CadArc arc:
+                DrawArcSegments(canvas, arc);
+                break;
+        }
+    }
+
+    private static void DrawArcSegments(ICanvas canvas, CadArc arc)
+    {
+        const int segments = 48;
+        var start = arc.StartAngle * MathF.PI / 180f;
+        var sweep = arc.SweepAngle * MathF.PI / 180f;
+        var previous = new PointF(arc.CenterX + arc.Radius * MathF.Cos(start),
+                                  arc.CenterY + arc.Radius * MathF.Sin(start));
+        for (var i = 1; i <= segments; i++)
+        {
+            var angle = start + sweep * i / segments;
+            var next = new PointF(arc.CenterX + arc.Radius * MathF.Cos(angle),
+                                  arc.CenterY + arc.Radius * MathF.Sin(angle));
+            canvas.DrawLine(previous, next);
+            previous = next;
         }
     }
 }
