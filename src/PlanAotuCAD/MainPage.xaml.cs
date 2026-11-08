@@ -532,71 +532,45 @@ public partial class MainPage : ContentPage
         }
     }
 
-    // قوائم الاختصاصات: تبقي الواجهة الرئيسية نظيفة وتعرض الأوامر عند الحاجة.
-    private async void OnDrawGroupClicked(object? sender, EventArgs e)
+    // تبديل لوحات الأدوات مباشرة دون قوائم منبثقة.
+    private void ShowToolPanel(string group)
     {
-        var items = new[]
-        {
-            "تحديد", "خط", "مستطيل", "دائرة", "بيضاوي",
-            "مثلث", "قوس", "متعدد الخطوط", "مضلع"
-        };
-        var choice = await DisplayActionSheetAsync("أدوات الرسم الهندسي", "إلغاء", null, items);
-        var tool = choice switch
-        {
-            "تحديد" => CadTool.Select,
-            "خط" => CadTool.Line,
-            "مستطيل" => CadTool.Rectangle,
-            "دائرة" => CadTool.Circle,
-            "بيضاوي" => CadTool.Ellipse,
-            "مثلث" => CadTool.Triangle,
-            "قوس" => CadTool.Arc,
-            "متعدد الخطوط" => CadTool.Polyline,
-            "مضلع" => CadTool.Polygon,
-            _ => (CadTool?)null
-        };
-        if (tool.HasValue) SetActiveTool(tool.Value);
+        DrawToolsPanel.IsVisible = group == "draw";
+        EditToolsPanel.IsVisible = group == "edit";
+        LayersToolsPanel.IsVisible = group == "layers";
+        FilesToolsPanel.IsVisible = group == "files";
+        ViewToolsPanel.IsVisible = group == "view";
+
+        DrawGroupButton.BackgroundColor = group == "draw" ? ActiveColor : InactiveColor;
+        EditGroupButton.BackgroundColor = group == "edit" ? ActiveColor : InactiveColor;
+        LayersGroupButton.BackgroundColor = group == "layers" ? ActiveColor : InactiveColor;
+        FilesGroupButton.BackgroundColor = group == "files" ? ActiveColor : InactiveColor;
+        ViewGroupButton.BackgroundColor = group == "view" ? ActiveColor : InactiveColor;
     }
 
-    private async void OnEditGroupClicked(object? sender, EventArgs e)
+    private void OnDrawGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheetAsync("التحديد والتعديل", "إلغاء", null,
-            "تحديد العناصر", "حذف المحدد", "تراجع", "إعادة");
-        switch (choice)
-        {
-            case "تحديد العناصر": SetActiveTool(CadTool.Select); break;
-            case "حذف المحدد": OnDeleteClicked(this, EventArgs.Empty); break;
-            case "تراجع": OnUndoClicked(this, EventArgs.Empty); break;
-            case "إعادة": OnRedoClicked(this, EventArgs.Empty); break;
-        }
+        ShowToolPanel("draw");
     }
 
-    private async void OnLayersGroupClicked(object? sender, EventArgs e)
+    private void OnEditGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheetAsync("تنظيم الرسم", "إلغاء", null,
-            "إدارة الطبقات", "خصائص العنصر");
-        if (choice == "إدارة الطبقات") OnLayersClicked(this, EventArgs.Empty);
-        else if (choice == "خصائص العنصر") OnPropertiesClicked(this, EventArgs.Empty);
+        ShowToolPanel("edit");
     }
 
-    private async void OnFilesGroupClicked(object? sender, EventArgs e)
+    private void OnLayersGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheetAsync("إدارة الملفات", "إلغاء", null,
-            "فتح مشروع", "حفظ المشروع", "استيراد DXF", "تصدير DXF");
-        switch (choice)
-        {
-            case "فتح مشروع": OnOpenClicked(this, EventArgs.Empty); break;
-            case "حفظ المشروع": OnSaveClicked(this, EventArgs.Empty); break;
-            case "استيراد DXF": OnImportDxfClicked(this, EventArgs.Empty); break;
-            case "تصدير DXF": OnExportDxfClicked(this, EventArgs.Empty); break;
-        }
+        ShowToolPanel("layers");
     }
 
-    private async void OnViewGroupClicked(object? sender, EventArgs e)
+    private void OnFilesGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheetAsync("أدوات الدقة", "إلغاء", null,
-            "الإدخال الرقمي");
-        if (choice == "الإدخال الرقمي")
-            OnNumericInputClicked(this, EventArgs.Empty);
+        ShowToolPanel("files");
+    }
+
+    private void OnViewGroupClicked(object? sender, EventArgs e)
+    {
+        ShowToolPanel("view");
     }
 
     private void RefreshStatus()
