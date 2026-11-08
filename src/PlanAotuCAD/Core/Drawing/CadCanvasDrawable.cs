@@ -84,7 +84,7 @@ public sealed class CadCanvasDrawable : IDrawable
     {
         canvas.StrokeSize = Math.Max(0.25f, entity.StrokeWidth) / Camera.Zoom;
         var colorHex = entity.ColorHex ?? layer?.ColorHex;
-        canvas.StrokeColor = overrideColor ??
+        var entityColor = overrideColor ??
             (entity.IsSelected ? Color.FromArgb("#FBBF24") :
              !string.IsNullOrWhiteSpace(colorHex) ? Color.FromArgb(colorHex) :
              entity switch
@@ -92,13 +92,14 @@ public sealed class CadCanvasDrawable : IDrawable
                  CadLine => Color.FromArgb("#F4F6FA"),
                  CadRectangle => Color.FromArgb("#4ADE80"),
                  CadCircle => Color.FromArgb("#60A5FA"),
-                CadEllipse => Color.FromArgb("#A78BFA"),
-                CadTriangle => Color.FromArgb("#F59E0B"),
-                CadArc => Color.FromArgb("#FB7185"),
-                CadPolyline => Color.FromArgb("#34D399"),
+                 CadEllipse => Color.FromArgb("#A78BFA"),
+                 CadTriangle => Color.FromArgb("#F59E0B"),
+                 CadArc => Color.FromArgb("#FB7185"),
+                 CadPolyline => Color.FromArgb("#34D399"),
                  _ => Colors.White
              });
-        canvas.FillColor = canvas.StrokeColor;
+        canvas.StrokeColor = entityColor;
+        canvas.FillColor = entityColor;
 
         switch (entity)
         {
