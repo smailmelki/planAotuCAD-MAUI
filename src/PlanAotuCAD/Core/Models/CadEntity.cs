@@ -10,6 +10,7 @@ namespace PlanAotuCAD.Core.Models;
 [JsonDerivedType(typeof(CadEllipse), "ellipse")]
 [JsonDerivedType(typeof(CadTriangle), "triangle")]
 [JsonDerivedType(typeof(CadArc), "arc")]
+[JsonDerivedType(typeof(CadPolyline), "polyline")]
 public abstract class CadEntity
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
