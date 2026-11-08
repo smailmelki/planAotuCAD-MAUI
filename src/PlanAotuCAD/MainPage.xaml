@@ -36,6 +36,8 @@
                     <Button x:Name="EllipseButton" Text="ELLIPSE" Clicked="OnEllipseToolClicked" />
                     <Button x:Name="TriangleButton" Text="TRIANGLE" Clicked="OnTriangleToolClicked" />
                     <Button x:Name="ArcButton" Text="ARC" Clicked="OnArcToolClicked" />
+                    <Button x:Name="PolylineButton" Text="POLYLINE" Clicked="OnPolylineToolClicked" />
+                    <Button x:Name="PolygonButton" Text="POLYGON" Clicked="OnPolygonToolClicked" />
                     <Button Text="UNDO" Clicked="OnUndoClicked" />
                     <Button Text="REDO" Clicked="OnRedoClicked" />
                     <Button Text="LAYERS" Clicked="OnLayersClicked" />
