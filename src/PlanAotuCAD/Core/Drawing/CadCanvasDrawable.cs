@@ -120,8 +120,8 @@ public sealed class CadCanvasDrawable : IDrawable
             case CadEllipse ellipse:
                 var ellipseRect = new RectF(ellipse.CenterX - ellipse.RadiusX, ellipse.CenterY - ellipse.RadiusY,
                     ellipse.RadiusX * 2f, ellipse.RadiusY * 2f);
-                if (entity.IsFilled) canvas.FillEllipse(ellipseRect);
-                else canvas.DrawEllipse(ellipseRect);
+                if (entity.IsFilled) canvas.FillEllipse(ellipseRect.X, ellipseRect.Y, ellipseRect.Width, ellipseRect.Height);
+                else canvas.DrawEllipse(ellipseRect.X, ellipseRect.Y, ellipseRect.Width, ellipseRect.Height);
                 break;
             case CadTriangle triangle:
                 var a = triangle.A; var b = triangle.B; var c = triangle.C;
