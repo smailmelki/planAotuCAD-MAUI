@@ -210,7 +210,8 @@ public sealed class CadEditorService
     {
         var source = Document.Layers.FirstOrDefault(x => x.Id == sourceLayerId);
         var target = Document.Layers.FirstOrDefault(x => x.Id == targetLayerId);
-        if (source is null || target is null || source.Id == target.Id || source.Id == "0")
+        if (source is null || target is null || source.Id == target.Id || source.Id == "0" ||
+            target.IsLocked || target.IsFrozen || !target.IsVisible)
             return false;
         var before = Snapshot();
         foreach (var entity in Document.Entities.Where(x => x.LayerId == sourceLayerId))
@@ -357,6 +358,7 @@ public sealed class CadEditorService
         CadCircle circle => float.IsFinite(circle.CenterX) && float.IsFinite(circle.CenterY) &&
             float.IsFinite(circle.Radius) && circle.Radius > 0.001f,
         CadEllipse ellipse => float.IsFinite(ellipse.CenterX) && float.IsFinite(ellipse.CenterY) &&
+            float.IsFinite(ellipse.RadiusX) && float.IsFinite(ellipse.RadiusY) &&
             ellipse.RadiusX > 0.001f && ellipse.RadiusY > 0.001f,
         CadTriangle triangle => float.IsFinite(triangle.X1) && float.IsFinite(triangle.Y1) &&
             float.IsFinite(triangle.X2) && float.IsFinite(triangle.Y2) &&
