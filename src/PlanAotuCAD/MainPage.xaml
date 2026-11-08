@@ -65,7 +65,7 @@
         </Grid>
 
         <!-- تبويبات الاختصاصات -->
-        <ScrollView Grid.Row="1" Orientation="Horizontal" BackgroundColor="#1B2937"
+        <ScrollView x:Name="GroupTabsBar" Grid.Row="1" Orientation="Horizontal" BackgroundColor="#1B2937"
                     HorizontalScrollBarVisibility="Never">
             <HorizontalStackLayout Padding="9,5" Spacing="4">
                 <Button x:Name="DrawGroupButton" Text="الرسم" ImageSource="cad_draw.svg"
@@ -176,7 +176,7 @@
         </Grid>
 
         <!-- شريط تنقل سفلي مناسب للمس -->
-        <Grid Grid.Row="5" BackgroundColor="#111A24" Padding="5,4"
+        <Grid x:Name="BottomNavigationBar" Grid.Row="5" BackgroundColor="#111A24" Padding="5,4"
               ColumnDefinitions="*,*,*,*,*">
             <Button Grid.Column="0" Text="رسم" ImageSource="cad_draw.svg" Style="{StaticResource TabButton}" Clicked="OnDrawGroupClicked"/>
             <Button Grid.Column="1" Text="تعديل" ImageSource="cad_edit.svg" Style="{StaticResource TabButton}" Clicked="OnEditGroupClicked"/>
