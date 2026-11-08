@@ -51,7 +51,9 @@ public sealed class CadEditorService
     private void Restore(string json)
     {
         var document = JsonSerializer.Deserialize<CadDocument>(json, JsonOptions) ?? new CadDocument();
-        ReplaceDocument(document);
+        ClearSelection();
+        Document = document;
+        NormalizeDocument();
     }
 
     public void SetTool(CadTool tool)
@@ -261,6 +263,13 @@ public sealed class CadEditorService
     {
         ClearSelection();
         Document = document ?? new CadDocument();
+        NormalizeDocument();
+        _undo.Clear();
+        _redo.Clear();
+    }
+
+    private void NormalizeDocument()
+    {
         if (Document.Layers is null || Document.Layers.Count == 0)
             Document.Layers = new List<CadLayer> { new() };
         if (Document.Entities is null) Document.Entities = new List<CadEntity>();
@@ -269,8 +278,6 @@ public sealed class CadEditorService
         foreach (var entity in Document.Entities)
             if (string.IsNullOrWhiteSpace(entity.LayerId) || !Document.Layers.Any(layer => layer.Id == entity.LayerId))
                 entity.LayerId = Document.Layers[0].Id;
-        _undo.Clear();
-        _redo.Clear();
     }
 
     public void CancelCurrentOperation()
