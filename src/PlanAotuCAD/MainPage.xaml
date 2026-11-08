@@ -1,182 +1,124 @@
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="PlanAotuCAD.MainPage"
     FlowDirection="LeftToRight"
-    BackgroundColor="#EEF2F6">
+    BackgroundColor="#E9EEF4">
 
     <ContentPage.Resources>
-        <Style TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#26364A" />
-            <Setter Property="TextColor" Value="#F8FAFC" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontAttributes" Value="Bold" />
-            <Setter Property="Padding" Value="13,8" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="HeightRequest" Value="38" />
-            <Setter Property="MinimumWidthRequest" Value="68" />
+        <Color x:Key="Ink">#172638</Color>
+        <Color x:Key="Muted">#8291A3</Color>
+        <Color x:Key="Line">#DCE3EB</Color>
+        <Style x:Key="DockButton" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="#24364B"/>
+            <Setter Property="TextColor" Value="#F4F7FB"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="HeightRequest" Value="66"/>
+            <Setter Property="WidthRequest" Value="88"/>
+            <Setter Property="ImageWidth" Value="25"/>
+            <Setter Property="ContentLayout" Value="Top,4"/>
+            <Setter Property="BorderWidth" Value="1"/>
+            <Setter Property="BorderColor" Value="#3C5068"/>
         </Style>
-        <Style x:Key="ToolButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#F1F5F9" />
-            <Setter Property="TextColor" Value="#334155" />
-            <Setter Property="BorderColor" Value="#D7E0E9" />
-            <Setter Property="BorderWidth" Value="1" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontAttributes" Value="Bold" />
-            <Setter Property="Padding" Value="12,7" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="HeightRequest" Value="40" />
-            <Setter Property="MinimumWidthRequest" Value="72" />
+        <Style x:Key="HeaderButton" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="#26394F"/>
+            <Setter Property="TextColor" Value="#EAF0F7"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="11,7"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HeightRequest" Value="38"/>
+            <Setter Property="ImageWidth" Value="18"/>
+            <Setter Property="ContentLayout" Value="Left,6"/>
         </Style>
     </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="0">
-
-        <!-- شريط العنوان والأوامر -->
-        <Grid Grid.Row="0"
-              BackgroundColor="#142235"
-              Padding="16,10"
-              ColumnDefinitions="Auto,*,Auto"
-              ColumnSpacing="18">
-            <VerticalStackLayout Spacing="1" VerticalOptions="Center">
-                <Label Text="MelkiCAD"
-                       TextColor="#FFFFFF"
-                       FontSize="21"
-                       FontAttributes="Bold" />
-                <Label Text="محرر الرسم الهندسي"
-                       TextColor="#A9BACD"
-                       FontSize="11" />
+        <!-- رأس التطبيق: هوية المشروع وأوامر الملف -->
+        <Grid Grid.Row="0" BackgroundColor="#142235" Padding="16,9"
+              ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+            <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                <Label Text="MelkiCAD" TextColor="White" FontSize="20" FontAttributes="Bold"/>
+                <Label Text="محرر المخططات الهندسية" TextColor="#AAB9CA" FontSize="10"/>
             </VerticalStackLayout>
-
-            <HorizontalStackLayout Grid.Column="1"
-                                   Spacing="7"
-                                   VerticalOptions="Center"
-                                   HorizontalOptions="Start">
-                <Button Text="تراجع" Clicked="OnUndoClicked" />
-                <Button Text="إعادة" Clicked="OnRedoClicked" />
-                <Button Text="الطبقات" Clicked="OnLayersClicked" />
-                <Button Text="خصائص العنصر" Clicked="OnPropertiesClicked" />
-                <Button Text="إدخال رقمي" Clicked="OnNumericInputClicked" />
+            <HorizontalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center">
+                <Button Text="تراجع" ImageSource="cad-undo.svg" Style="{StaticResource HeaderButton}" Clicked="OnUndoClicked"/>
+                <Button Text="إعادة" ImageSource="cad-redo.svg" Style="{StaticResource HeaderButton}" Clicked="OnRedoClicked"/>
+                <Button Text="فتح" Style="{StaticResource HeaderButton}" Clicked="OnOpenClicked"/>
+                <Button Text="حفظ" ImageSource="cad-save.svg" BackgroundColor="#147D60" TextColor="White"
+                        Style="{StaticResource HeaderButton}" Clicked="OnSaveClicked"/>
             </HorizontalStackLayout>
-
-            <HorizontalStackLayout Grid.Column="2"
-                                   Spacing="7"
-                                   VerticalOptions="Center">
-                <Button Text="فتح" Clicked="OnOpenClicked" />
-                <Button Text="استيراد DXF" Clicked="OnImportDxfClicked" />
-                <Button Text="حفظ" BackgroundColor="#16845B" Clicked="OnSaveClicked" />
-                <Button Text="تصدير DXF" BackgroundColor="#16845B" Clicked="OnExportDxfClicked" />
-            </HorizontalStackLayout>
+            <Label Grid.Column="2" Text="CAD  •  NATIVE" TextColor="#8297AD" FontSize="10"
+                   VerticalOptions="Center" CharacterSpacing="1"/>
         </Grid>
 
-        <!-- شريط أدوات الرسم -->
-        <Grid Grid.Row="1"
-              BackgroundColor="#FFFFFF"
-              Padding="12,9"
-              RowDefinitions="Auto,Auto">
-            <Label Text="أدوات الرسم والتحديد"
-                   TextColor="#64748B"
-                   FontSize="11"
-                   FontAttributes="Bold"
-                   Margin="2,0,0,6" />
-            <ScrollView Grid.Row="1"
-                        Orientation="Horizontal"
-                        HorizontalScrollBarVisibility="Never">
-                <HorizontalStackLayout Spacing="7">
-                    <Button x:Name="SelectButton" Text="تحديد" Style="{StaticResource ToolButton}" Clicked="OnSelectToolClicked" />
-                    <Button x:Name="LineButton" Text="خط" Style="{StaticResource ToolButton}" Clicked="OnLineToolClicked" />
-                    <Button x:Name="RectButton" Text="مستطيل" Style="{StaticResource ToolButton}" Clicked="OnRectToolClicked" />
-                    <Button x:Name="CircleButton" Text="دائرة" Style="{StaticResource ToolButton}" Clicked="OnCircleToolClicked" />
-                    <Button x:Name="EllipseButton" Text="بيضاوي" Style="{StaticResource ToolButton}" Clicked="OnEllipseToolClicked" />
-                    <Button x:Name="TriangleButton" Text="مثلث" Style="{StaticResource ToolButton}" Clicked="OnTriangleToolClicked" />
-                    <Button x:Name="ArcButton" Text="قوس" Style="{StaticResource ToolButton}" Clicked="OnArcToolClicked" />
-                    <Button x:Name="PolylineButton" Text="متعدد الخطوط" Style="{StaticResource ToolButton}" Clicked="OnPolylineToolClicked" />
-                    <Button x:Name="PolygonButton" Text="مضلع" Style="{StaticResource ToolButton}" Clicked="OnPolygonToolClicked" />
-                    <Button Text="حذف المحدد" BackgroundColor="#FCE8E8" TextColor="#B42318" BorderColor="#F3C6C3" BorderWidth="1" Clicked="OnDeleteClicked" />
-                </HorizontalStackLayout>
-            </ScrollView>
+        <!-- شريط الاختصاصات: قوائم مصنفة بدلاً من ازدحام الأدوات -->
+        <Grid Grid.Row="1" BackgroundColor="#1B2B3E" Padding="12,9"
+              ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+            <Button Grid.Column="0" Text="الرسم" ImageSource="cad-draw.svg"
+                    Style="{StaticResource DockButton}" Clicked="OnDrawGroupClicked"/>
+            <Button Grid.Column="1" Text="التعديل والتحديد" ImageSource="cad-edit.svg"
+                    Style="{StaticResource DockButton}" Clicked="OnEditGroupClicked"/>
+            <Button Grid.Column="2" Text="الطبقات والخصائص" ImageSource="cad-layers.svg"
+                    Style="{StaticResource DockButton}" Clicked="OnLayersGroupClicked"/>
+            <Button Grid.Column="3" Text="الملفات و DXF" ImageSource="cad-file.svg"
+                    Style="{StaticResource DockButton}" Clicked="OnFilesGroupClicked"/>
+            <Button Grid.Column="4" Text="الدقة والعرض" ImageSource="cad-view.svg"
+                    Style="{StaticResource DockButton}" Clicked="OnViewGroupClicked"/>
         </Grid>
 
-        <!-- مساحة العمل -->
-        <Grid Grid.Row="2" Padding="10" BackgroundColor="#E8EDF3">
-            <Border Stroke="#D4DDE7"
-                    StrokeThickness="1"
-                    BackgroundColor="#F8FAFC"
-                    StrokeShape="RoundRectangle 10"
-                    Padding="0">
+        <!-- مساحة الرسم هي مركز الواجهة -->
+        <Grid Grid.Row="2" Padding="10" BackgroundColor="#E9EEF4">
+            <Border Stroke="#D5DEE8" StrokeThickness="1" BackgroundColor="#FFFFFF"
+                    StrokeShape="RoundRectangle 10" Padding="0">
                 <Grid RowDefinitions="Auto,*">
-                    <Grid BackgroundColor="#F1F5F9"
-                          Padding="12,7"
-                          ColumnDefinitions="*,Auto">
-                        <Label Text="مساحة الرسم"
-                               TextColor="#334155"
-                               FontSize="12"
-                               FontAttributes="Bold"
-                               VerticalOptions="Center" />
-                        <Label Grid.Column="1"
-                               Text="اسحب للرسم • استخدم عجلة الفأرة للتكبير"
-                               TextColor="#8291A3"
-                               FontSize="10"
-                               VerticalOptions="Center" />
+                    <Grid BackgroundColor="#F5F7FA" Padding="13,7" ColumnDefinitions="*,Auto">
+                        <Label Text="مساحة العمل" TextColor="#26394F" FontSize="12"
+                               FontAttributes="Bold" VerticalOptions="Center"/>
+                        <Label Grid.Column="1" Text="زر الفأرة الأوسط للتحريك  •  عجلة الفأرة للتكبير"
+                               TextColor="#8291A3" FontSize="10" VerticalOptions="Center"/>
                     </Grid>
-                    <GraphicsView x:Name="CadView"
-                                  Grid.Row="1"
-                                  BackgroundColor="#FBFCFE"
-                                  HorizontalOptions="Fill"
-                                  VerticalOptions="Fill" />
+                    <GraphicsView x:Name="CadView" Grid.Row="1" BackgroundColor="#FCFDFE"
+                                  HorizontalOptions="Fill" VerticalOptions="Fill"/>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- خصائص العنصر: تبقى مدمجة في مساحة العمل -->
-        <Border x:Name="PropertiesPanel"
-                Grid.Row="3"
-                IsVisible="False"
-                BackgroundColor="#FFFFFF"
-                Stroke="#D7E0E9"
-                StrokeThickness="1"
-                Padding="12,9"
-                Margin="10,0,10,8"
-                StrokeShape="RoundRectangle 10">
-            <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
-                <Label Text="خصائص العنصر المحدد"
-                       TextColor="#24364B"
-                       FontAttributes="Bold"
-                       FontSize="12" />
-                <ScrollView Grid.Row="1"
-                            Orientation="Horizontal"
-                            HorizontalScrollBarVisibility="Never">
-                    <HorizontalStackLayout Spacing="9" VerticalOptions="Center">
-                        <Entry x:Name="PropertyNameEntry" Placeholder="اسم العنصر" WidthRequest="150" />
-                        <Entry x:Name="PropertyColorEntry" Placeholder="اللون #RRGGBB" WidthRequest="125" />
-                        <Entry x:Name="PropertyWidthEntry" Placeholder="سمك الخط" WidthRequest="95" Keyboard="Numeric" />
-                        <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
-                            <Label Text="تعبئة" TextColor="#475569" VerticalOptions="Center" FontSize="12" />
-                            <Switch x:Name="PropertyFillSwitch" />
+        <!-- خصائص العنصر تظهر عند التحديد وتبقى مدمجة -->
+        <Border x:Name="PropertiesPanel" Grid.Row="3" IsVisible="False"
+                BackgroundColor="White" Stroke="#DCE3EB" StrokeThickness="1"
+                Padding="12,8" Margin="10,0,10,8" StrokeShape="RoundRectangle 9">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="7">
+                <Label Text="خصائص العنصر المحدد" TextColor="#26394F"
+                       FontAttributes="Bold" FontSize="12"/>
+                <ScrollView Grid.Row="1" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <Entry x:Name="PropertyNameEntry" Placeholder="اسم العنصر" WidthRequest="145"/>
+                        <Entry x:Name="PropertyColorEntry" Placeholder="اللون #RRGGBB" WidthRequest="125"/>
+                        <Entry x:Name="PropertyWidthEntry" Placeholder="سمك الخط" WidthRequest="95" Keyboard="Numeric"/>
+                        <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                            <Label Text="تعبئة" TextColor="#526174" FontSize="12" VerticalOptions="Center"/>
+                            <Switch x:Name="PropertyFillSwitch"/>
                         </HorizontalStackLayout>
-                        <Picker x:Name="PropertyLayerPicker" Title="الطبقة" WidthRequest="150" />
-                        <Button Text="تطبيق" BackgroundColor="#16845B" Clicked="OnApplyPropertiesClicked" />
+                        <Picker x:Name="PropertyLayerPicker" Title="الطبقة" WidthRequest="145"/>
+                        <Button Text="تطبيق" BackgroundColor="#147D60" TextColor="White"
+                                CornerRadius="8" Clicked="OnApplyPropertiesClicked"/>
                     </HorizontalStackLayout>
                 </ScrollView>
             </Grid>
         </Border>
 
         <!-- شريط الحالة -->
-        <Grid Grid.Row="4"
-              BackgroundColor="#142235"
-              Padding="14,8"
-              ColumnDefinitions="*,Auto">
-            <Label x:Name="StatusLabel"
-                   Text="جاهز للرسم"
-                   TextColor="#D8E2ED"
-                   FontSize="11"
-                   VerticalOptions="Center" />
-            <Label x:Name="EntityCountLabel"
-                   Grid.Column="1"
-                   Text="0 عنصر"
-                   TextColor="#A9BACD"
-                   FontSize="11"
-                   VerticalOptions="Center" />
+        <Grid Grid.Row="4" BackgroundColor="#142235" Padding="13,7"
+              ColumnDefinitions="*,Auto,Auto" ColumnSpacing="18">
+            <Label x:Name="StatusLabel" Text="جاهز — اختر اختصاصاً من شريط الأدوات"
+                   TextColor="#DCE5EF" FontSize="11" VerticalOptions="Center"/>
+            <Label Grid.Column="1" Text="MODEL SPACE" TextColor="#8297AD"
+                   FontSize="9" VerticalOptions="Center"/>
+            <Label x:Name="EntityCountLabel" Grid.Column="2" Text="0 عنصر"
+                   TextColor="#B9C8D8" FontSize="11" VerticalOptions="Center"/>
         </Grid>
     </Grid>
 </ContentPage>
