@@ -61,15 +61,15 @@ public partial class MainPage : ContentPage
     {
         _editor.SetTool(tool);
 
-        SelectButton.BackgroundColor = tool == CadTool.Select ? ActiveColor : InactiveColor;
-        LineButton.BackgroundColor = tool == CadTool.Line ? ActiveColor : InactiveColor;
-        RectButton.BackgroundColor = tool == CadTool.Rectangle ? ActiveColor : InactiveColor;
-        CircleButton.BackgroundColor = tool == CadTool.Circle ? ActiveColor : InactiveColor;
-        EllipseButton.BackgroundColor = tool == CadTool.Ellipse ? ActiveColor : InactiveColor;
-        TriangleButton.BackgroundColor = tool == CadTool.Triangle ? ActiveColor : InactiveColor;
-        ArcButton.BackgroundColor = tool == CadTool.Arc ? ActiveColor : InactiveColor;
-        PolylineButton.BackgroundColor = tool == CadTool.Polyline ? ActiveColor : InactiveColor;
-        PolygonButton.BackgroundColor = tool == CadTool.Polygon ? ActiveColor : InactiveColor;
+        var isDrawingTool = tool is CadTool.Line or CadTool.Rectangle or CadTool.Circle
+            or CadTool.Ellipse or CadTool.Triangle or CadTool.Arc
+            or CadTool.Polyline or CadTool.Polygon;
+
+        DrawGroupButton.BackgroundColor = isDrawingTool ? ActiveColor : InactiveColor;
+        EditGroupButton.BackgroundColor = tool == CadTool.Select ? ActiveColor : InactiveColor;
+        LayersGroupButton.BackgroundColor = InactiveColor;
+        FilesGroupButton.BackgroundColor = InactiveColor;
+        ViewGroupButton.BackgroundColor = InactiveColor;
 
         StatusLabel.Text = tool switch
         {
@@ -88,8 +88,8 @@ public partial class MainPage : ContentPage
         RefreshCanvas();
     }
 
-    private static Color ActiveColor => Color.FromArgb("#DCEFE8");
-    private static Color InactiveColor => Color.FromArgb("#F1F5F9");
+    private static Color ActiveColor => Color.FromArgb("#147D60");
+    private static Color InactiveColor => Color.FromArgb("#24364B");
 
     private void OnCanvasStart(object? sender, TouchEventArgs e)
     {
@@ -171,7 +171,7 @@ public partial class MainPage : ContentPage
 
         if (string.IsNullOrEmpty(format))
         {
-            await DisplayAlert("الإدخال الرقمي", "اختر أداة هندسية تدعم الإدخال الرقمي.", "موافق");
+            await DisplayAlertAsync("الإدخال الرقمي", "اختر أداة هندسية تدعم الإدخال الرقمي.", "موافق");
             return;
         }
 
@@ -197,7 +197,7 @@ public partial class MainPage : ContentPage
                 !float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ||
                 !float.IsFinite(parsed)))
         {
-            await DisplayAlert("قيم غير صحيحة", $"أدخل {expectedCount} أرقام مفصولة بالفاصلة المنقوطة (;). استخدم النقطة للفواصل العشرية.", "موافق");
+            await DisplayAlertAsync("قيم غير صحيحة", $"أدخل {expectedCount} أرقام مفصولة بالفاصلة المنقوطة (;). استخدم النقطة للفواصل العشرية.", "موافق");
             return;
         }
 
@@ -222,7 +222,7 @@ public partial class MainPage : ContentPage
 
         if (!dimensionsArePositive)
         {
-            await DisplayAlert("أبعاد غير صالحة", "يجب أن يكون الطول والعرض والارتفاع ونصف القطر أكبر من صفر.", "موافق");
+            await DisplayAlertAsync("أبعاد غير صالحة", "يجب أن يكون الطول والعرض والارتفاع ونصف القطر أكبر من صفر.", "موافق");
             return;
         }
 
@@ -245,7 +245,7 @@ public partial class MainPage : ContentPage
 
         if (!_editor.AddEntity(entity))
         {
-            await DisplayAlert("قيم غير صالحة", "يجب أن تكون الأبعاد أكبر من صفر.", "موافق");
+            await DisplayAlertAsync("قيم غير صالحة", "يجب أن تكون الأبعاد أكبر من صفر.", "موافق");
             return;
         }
 
@@ -289,22 +289,22 @@ public partial class MainPage : ContentPage
 
     private async void OnLayersClicked(object? sender, EventArgs e)
     {
-        var action = await DisplayActionSheet("إدارة الطبقات", "إلغاء", null,
+        var action = await DisplayActionSheetAsync("إدارة الطبقات", "إلغاء", null,
             "إضافة طبقة", "إدارة طبقة موجودة");
         if (action == "إضافة طبقة")
         {
             var name = await DisplayPromptAsync("طبقة جديدة", "اسم الطبقة:");
             if (!string.IsNullOrWhiteSpace(name) && !_editor.AddLayer(name))
-                await DisplayAlert("الطبقات", "الاسم مستخدم أو غير صالح.", "موافق");
+                await DisplayAlertAsync("الطبقات", "الاسم مستخدم أو غير صالح.", "موافق");
         }
         else if (action == "إدارة طبقة موجودة")
         {
             var labels = _editor.Document.Layers.Select(x => $"{x.Name} [{(x.IsVisible ? "مرئية" : "مخفية")}{(x.IsLocked ? "، مقفلة" : "")}]").ToArray();
-            var selected = await DisplayActionSheet("اختر الطبقة", "إلغاء", null, labels);
+            var selected = await DisplayActionSheetAsync("اختر الطبقة", "إلغاء", null, labels);
             var index = Array.IndexOf(labels, selected);
             if (index < 0) return;
             var layer = _editor.Document.Layers[index];
-            var operation = await DisplayActionSheet($"الطبقة: {layer.Name}", "إلغاء", null,
+            var operation = await DisplayActionSheetAsync($"الطبقة: {layer.Name}", "إلغاء", null,
                 "تعيين كنشطة", "إعادة تسمية", layer.IsVisible ? "إخفاء" : "إظهار",
                 layer.IsLocked ? "فتح القفل" : "قفل", layer.IsFrozen ? "إلغاء التجميد" : "تجميد",
                 "نقل العنصر المحدد إليها", "تغيير اللون", "دمج الطبقة", "حذف الطبقة");
@@ -323,22 +323,22 @@ public partial class MainPage : ContentPage
                 case "إلغاء التجميد": _editor.SetLayerFrozen(layer.Id, false); break;
                 case "نقل العنصر المحدد إليها":
                     if (!_editor.MoveSelectedToLayer(layer.Id))
-                        await DisplayAlert("الطبقات", "حدد عنصراً أولاً، وتأكد أن الطبقة قابلة للتحرير.", "موافق");
+                        await DisplayAlertAsync("الطبقات", "حدد عنصراً أولاً، وتأكد أن الطبقة قابلة للتحرير.", "موافق");
                     break;
                 case "تغيير اللون":
                     var layerColor = await DisplayPromptAsync("لون الطبقة", "أدخل HEX مثل #FFAA00:", initialValue: layer.ColorHex);
                     if (!string.IsNullOrWhiteSpace(layerColor) && !_editor.SetLayerColor(layer.Id, layerColor))
-                        await DisplayAlert("الطبقات", "صيغة اللون غير صحيحة.", "موافق");
+                        await DisplayAlertAsync("الطبقات", "صيغة اللون غير صحيحة.", "موافق");
                     break;
                 case "دمج الطبقة":
                     var mergeTargets = _editor.Document.Layers.Where(x => x.Id != layer.Id).ToArray();
-                    var mergeName = await DisplayActionSheet("دمج في الطبقة", "إلغاء", null, mergeTargets.Select(x => x.Name).ToArray());
+                    var mergeName = await DisplayActionSheetAsync("دمج في الطبقة", "إلغاء", null, mergeTargets.Select(x => x.Name).ToArray());
                     var mergeTarget = mergeTargets.FirstOrDefault(x => x.Name == mergeName);
                     if (mergeTarget is not null) _editor.MergeLayer(layer.Id, mergeTarget.Id);
                     break;
                 case "حذف الطبقة":
                     if (!_editor.DeleteLayer(layer.Id))
-                        await DisplayAlert("الطبقات", "لا يمكن حذف الطبقة الافتراضية أو آخر طبقة.", "موافق");
+                        await DisplayAlertAsync("الطبقات", "لا يمكن حذف الطبقة الافتراضية أو آخر طبقة.", "موافق");
                     break;
             }
         }
@@ -351,7 +351,7 @@ public partial class MainPage : ContentPage
     {
         if (_editor.SelectedEntity is null)
         {
-            await DisplayAlert("خصائص العنصر", "حدد عنصراً أولاً.", "موافق");
+            await DisplayAlertAsync("خصائص العنصر", "حدد عنصراً أولاً.", "موافق");
             return;
         }
 
@@ -384,7 +384,7 @@ public partial class MainPage : ContentPage
         if (!float.TryParse(PropertyWidthEntry.Text, NumberStyles.Float,
                 CultureInfo.InvariantCulture, out var width) || !float.IsFinite(width) || width <= 0)
         {
-            await DisplayAlert("خصائص العنصر", "أدخل سمك خط موجباً وصحيحاً.", "موافق");
+            await DisplayAlertAsync("خصائص العنصر", "أدخل سمك خط موجباً وصحيحاً.", "موافق");
             return;
         }
 
@@ -392,14 +392,14 @@ public partial class MainPage : ContentPage
         var layer = _editor.Document.Layers.FirstOrDefault(x => x.Name == layerName);
         if (layer is null)
         {
-            await DisplayAlert("خصائص العنصر", "اختر طبقة صالحة.", "موافق");
+            await DisplayAlertAsync("خصائص العنصر", "اختر طبقة صالحة.", "موافق");
             return;
         }
 
         if (!_editor.UpdateSelectedProperties(PropertyNameEntry.Text, PropertyColorEntry.Text,
                 width, PropertyFillSwitch.IsToggled, layer.Id))
         {
-            await DisplayAlert("خصائص العنصر", "تعذر تطبيق الخصائص. تحقق من اللون والطبقة وسمك الخط.", "موافق");
+            await DisplayAlertAsync("خصائص العنصر", "تعذر تطبيق الخصائص. تحقق من اللون والطبقة وسمك الخط.", "موافق");
             return;
         }
 
@@ -425,13 +425,13 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("تعذر الحفظ", ex.Message, "موافق");
+            await DisplayAlertAsync("تعذر الحفظ", ex.Message, "موافق");
         }
     }
 
     private async void OnOpenClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheet(
+        var choice = await DisplayActionSheetAsync(
             "فتح رسم",
             "إلغاء",
             null,
@@ -451,7 +451,7 @@ public partial class MainPage : ContentPage
 
                 if (drawings.Count == 0)
                 {
-                    await DisplayAlert(
+                    await DisplayAlertAsync(
                         "الرسومات المحفوظة",
                         "لا توجد رسومات محفوظة داخل التطبيق حتى الآن.",
                         "موافق");
@@ -463,7 +463,7 @@ public partial class MainPage : ContentPage
                         $"{drawing.Name} — {drawing.LastModifiedUtc.ToLocalTime():dd/MM/yyyy HH:mm}")
                     .ToArray();
 
-                var selectedLabel = await DisplayActionSheet(
+                var selectedLabel = await DisplayActionSheetAsync(
                     "اختر الرسم الذي تريد فتحه",
                     "إلغاء",
                     null,
@@ -495,7 +495,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("تعذر فتح الرسم", ex.Message, "موافق");
+            await DisplayAlertAsync("تعذر فتح الرسم", ex.Message, "موافق");
         }
     }
 
@@ -515,7 +515,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("تعذر استيراد DXF", ex.Message, "موافق");
+            await DisplayAlertAsync("تعذر استيراد DXF", ex.Message, "موافق");
         }
     }
 
@@ -528,7 +528,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("تعذر تصدير DXF", ex.Message, "موافق");
+            await DisplayAlertAsync("تعذر تصدير DXF", ex.Message, "موافق");
         }
     }
 
@@ -540,7 +540,7 @@ public partial class MainPage : ContentPage
             "تحديد", "خط", "مستطيل", "دائرة", "بيضاوي",
             "مثلث", "قوس", "متعدد الخطوط", "مضلع"
         };
-        var choice = await DisplayActionSheet("أدوات الرسم الهندسي", "إلغاء", null, items);
+        var choice = await DisplayActionSheetAsync("أدوات الرسم الهندسي", "إلغاء", null, items);
         var tool = choice switch
         {
             "تحديد" => CadTool.Select,
@@ -559,7 +559,7 @@ public partial class MainPage : ContentPage
 
     private async void OnEditGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheet("التحديد والتعديل", "إلغاء", null,
+        var choice = await DisplayActionSheetAsync("التحديد والتعديل", "إلغاء", null,
             "تحديد العناصر", "حذف المحدد", "تراجع", "إعادة");
         switch (choice)
         {
@@ -572,7 +572,7 @@ public partial class MainPage : ContentPage
 
     private async void OnLayersGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheet("تنظيم الرسم", "إلغاء", null,
+        var choice = await DisplayActionSheetAsync("تنظيم الرسم", "إلغاء", null,
             "إدارة الطبقات", "خصائص العنصر");
         if (choice == "إدارة الطبقات") OnLayersClicked(this, EventArgs.Empty);
         else if (choice == "خصائص العنصر") OnPropertiesClicked(this, EventArgs.Empty);
@@ -580,7 +580,7 @@ public partial class MainPage : ContentPage
 
     private async void OnFilesGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheet("إدارة الملفات", "إلغاء", null,
+        var choice = await DisplayActionSheetAsync("إدارة الملفات", "إلغاء", null,
             "فتح مشروع", "حفظ المشروع", "استيراد DXF", "تصدير DXF");
         switch (choice)
         {
@@ -593,7 +593,7 @@ public partial class MainPage : ContentPage
 
     private async void OnViewGroupClicked(object? sender, EventArgs e)
     {
-        var choice = await DisplayActionSheet("أدوات الدقة", "إلغاء", null,
+        var choice = await DisplayActionSheetAsync("أدوات الدقة", "إلغاء", null,
             "الإدخال الرقمي");
         if (choice == "الإدخال الرقمي")
             OnNumericInputClicked(this, EventArgs.Empty);
