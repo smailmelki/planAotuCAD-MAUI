@@ -5,5 +5,8 @@ public enum CadTool
     Select,
     Line,
     Rectangle,
-    Circle
+    Circle,
+    Ellipse,
+    Triangle,
+    Arc
 }
