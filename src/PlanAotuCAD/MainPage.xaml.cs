@@ -43,6 +43,11 @@ public partial class MainPage : ContentPage
         CadView.HandlerChanged += OnCadViewHandlerChanged;
 #endif
 
+#if WINDOWS
+        BottomNavigationBar.IsVisible = false;
+#elif ANDROID
+        GroupTabsBar.IsVisible = false;
+#endif
         ShowToolPanel("edit");
         SetActiveTool(CadTool.Select);
         RefreshStatus();
