@@ -337,42 +337,64 @@ public partial class MainPage : ContentPage
 
     private async void OnPropertiesClicked(object? sender, EventArgs e)
     {
-        var entity = _editor.SelectedEntity;
-        if (entity is null)
+        if (_editor.SelectedEntity is null)
         {
             await DisplayAlert("خصائص العنصر", "حدد عنصراً أولاً.", "موافق");
             return;
         }
 
-        var name = await DisplayPromptAsync("اسم العنصر", "الاسم:", initialValue: entity.Name);
-        if (name is null) return;
-        var color = await DisplayPromptAsync("لون العنصر", "لون HEX مثل #FFAA00، أو اتركه فارغاً لاستخدام لون الطبقة:",
-            initialValue: entity.ColorHex ?? string.Empty);
-        if (color is null) return;
-        var widthText = await DisplayPromptAsync("سمك الخط", "أدخل سمك الخط:", initialValue:
-            entity.StrokeWidth.ToString(CultureInfo.InvariantCulture), keyboard: Keyboard.Numeric);
-        if (!float.TryParse(widthText, NumberStyles.Float, CultureInfo.InvariantCulture, out var width) || width <= 0)
+        PropertiesPanel.IsVisible = !PropertiesPanel.IsVisible;
+        if (PropertiesPanel.IsVisible) RefreshPropertiesPanel();
+    }
+
+    private void RefreshPropertiesPanel()
+    {
+        var entity = _editor.SelectedEntity;
+        if (entity is null)
         {
-            await DisplayAlert("خصائص العنصر", "سمك الخط غير صالح.", "موافق");
+            PropertiesPanel.IsVisible = false;
             return;
         }
-        var fillChoice = await DisplayActionSheet("تعبئة العنصر", "إلغاء", null,
-            entity.IsFilled ? "معبأ" : "غير معبأ", entity.IsFilled ? "غير معبأ" : "معبأ");
-        if (fillChoice == "إلغاء" || string.IsNullOrEmpty(fillChoice)) return;
-        if (!string.IsNullOrWhiteSpace(color) &&
-            (!color.StartsWith("#", StringComparison.Ordinal) || (color.Length != 7 && color.Length != 9)))
+
+        PropertyNameEntry.Text = entity.Name;
+        PropertyColorEntry.Text = entity.ColorHex ?? string.Empty;
+        PropertyWidthEntry.Text = entity.StrokeWidth.ToString(CultureInfo.InvariantCulture);
+        PropertyFillSwitch.IsToggled = entity.IsFilled;
+        PropertyLayerPicker.ItemsSource = _editor.Document.Layers.Select(x => x.Name).ToList();
+        PropertyLayerPicker.SelectedItem = _editor.Document.GetLayer(entity.LayerId).Name;
+    }
+
+    private async void OnApplyPropertiesClicked(object? sender, EventArgs e)
+    {
+        var entity = _editor.SelectedEntity;
+        if (entity is null) return;
+
+        if (!float.TryParse(PropertyWidthEntry.Text, NumberStyles.Float,
+                CultureInfo.InvariantCulture, out var width) || !float.IsFinite(width) || width <= 0)
         {
-            await DisplayAlert("خصائص العنصر", "صيغة اللون يجب أن تكون #RRGGBB أو #AARRGGBB.", "موافق");
+            await DisplayAlert("خصائص العنصر", "أدخل سمك خط موجباً وصحيحاً.", "موافق");
             return;
         }
-        _editor.UpdateSelectedProperties(name, color, width, fillChoice == "معبأ");
-        var target = await DisplayActionSheet("طبقة العنصر", "إنهاء", null,
-            _editor.Document.Layers.Select(x => x.Name).ToArray());
-        var targetLayer = _editor.Document.Layers.FirstOrDefault(x => x.Name == target);
-        if (targetLayer is not null) _editor.MoveSelectedToLayer(targetLayer.Id);
+
+        var layerName = PropertyLayerPicker.SelectedItem as string;
+        var layer = _editor.Document.Layers.FirstOrDefault(x => x.Name == layerName);
+        if (layer is null)
+        {
+            await DisplayAlert("خصائص العنصر", "اختر طبقة صالحة.", "موافق");
+            return;
+        }
+
+        if (!_editor.UpdateSelectedProperties(PropertyNameEntry.Text, PropertyColorEntry.Text,
+                width, PropertyFillSwitch.IsToggled, layer.Id))
+        {
+            await DisplayAlert("خصائص العنصر", "تعذر تطبيق الخصائص. تحقق من اللون والطبقة وسمك الخط.", "موافق");
+            return;
+        }
+
         _drawable.Document = _editor.Document;
         RefreshStatus();
         RefreshCanvas();
+        StatusLabel.Text = "تم تحديث خصائص العنصر";
     }
 
     private void OnDeleteClicked(object? sender, EventArgs e)
@@ -502,7 +524,14 @@ public partial class MainPage : ContentPage
     {
         EntityCountLabel.Text = $"{_editor.Document.EntityCount} entities";
         if (_editor.SelectedEntity is not null)
+        {
             StatusLabel.Text = "عنصر محدد — اسحب لتحريكه أو اضغط DELETE لحذفه";
+            RefreshPropertiesPanel();
+        }
+        else
+        {
+            PropertiesPanel.IsVisible = false;
+        }
     }
 
     private void RefreshCanvas() => CadView.Invalidate();
