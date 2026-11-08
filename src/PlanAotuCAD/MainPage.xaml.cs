@@ -285,7 +285,7 @@ public partial class MainPage : ContentPage
             var operation = await DisplayActionSheet($"الطبقة: {layer.Name}", "إلغاء", null,
                 "تعيين كنشطة", "إعادة تسمية", layer.IsVisible ? "إخفاء" : "إظهار",
                 layer.IsLocked ? "فتح القفل" : "قفل", layer.IsFrozen ? "إلغاء التجميد" : "تجميد",
-                "نقل العنصر المحدد إليها", "حذف الطبقة");
+                "نقل العنصر المحدد إليها", "تغيير اللون", "دمج الطبقة", "حذف الطبقة");
             switch (operation)
             {
                 case "تعيين كنشطة": _editor.SetActiveLayer(layer.Id); break;
@@ -302,6 +302,17 @@ public partial class MainPage : ContentPage
                 case "نقل العنصر المحدد إليها":
                     if (!_editor.MoveSelectedToLayer(layer.Id))
                         await DisplayAlert("الطبقات", "حدد عنصراً أولاً، وتأكد أن الطبقة قابلة للتحرير.", "موافق");
+                    break;
+                case "تغيير اللون":
+                    var layerColor = await DisplayPromptAsync("لون الطبقة", "أدخل HEX مثل #FFAA00:", initialValue: layer.ColorHex);
+                    if (!string.IsNullOrWhiteSpace(layerColor) && !_editor.SetLayerColor(layer.Id, layerColor))
+                        await DisplayAlert("الطبقات", "صيغة اللون غير صحيحة.", "موافق");
+                    break;
+                case "دمج الطبقة":
+                    var mergeTargets = _editor.Document.Layers.Where(x => x.Id != layer.Id).ToArray();
+                    var mergeName = await DisplayActionSheet("دمج في الطبقة", "إلغاء", null, mergeTargets.Select(x => x.Name).ToArray());
+                    var mergeTarget = mergeTargets.FirstOrDefault(x => x.Name == mergeName);
+                    if (mergeTarget is not null) _editor.MergeLayer(layer.Id, mergeTarget.Id);
                     break;
                 case "حذف الطبقة":
                     if (!_editor.DeleteLayer(layer.Id))
