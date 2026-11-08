@@ -9,6 +9,13 @@ namespace PlanAotuCAD.Core.Models;
 [JsonDerivedType(typeof(CadCircle), "circle")]
 public abstract class CadEntity
 {
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Name { get; set; } = string.Empty;
+    public string LayerId { get; set; } = "0";
+    public string? ColorHex { get; set; }
+    public float StrokeWidth { get; set; } = 2f;
+    public bool IsFilled { get; set; }
+
     [JsonIgnore]
     public bool IsSelected { get; set; }
 
