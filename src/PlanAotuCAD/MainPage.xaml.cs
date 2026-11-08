@@ -574,25 +574,8 @@ public partial class MainPage : ContentPage
     {
         var choice = await DisplayActionSheet("تنظيم الرسم", "إلغاء", null,
             "إدارة الطبقات", "خصائص العنصر");
-        if (choice == "إدارة الطبقات") await OnLayersMenuAsync();
-        else if (choice == "خصائص العنصر") await TogglePropertiesAsync();
-    }
-
-    private async Task OnLayersMenuAsync()
-    {
-        OnLayersClicked(this, EventArgs.Empty);
-        await Task.CompletedTask;
-    }
-
-    private async Task TogglePropertiesAsync()
-    {
-        await OnPropertiesMenuAsync();
-    }
-
-    private async Task OnPropertiesMenuAsync()
-    {
-        OnPropertiesClicked(this, EventArgs.Empty);
-        await Task.CompletedTask;
+        if (choice == "إدارة الطبقات") OnLayersClicked(this, EventArgs.Empty);
+        else if (choice == "خصائص العنصر") OnPropertiesClicked(this, EventArgs.Empty);
     }
 
     private async void OnFilesGroupClicked(object? sender, EventArgs e)
@@ -613,13 +596,7 @@ public partial class MainPage : ContentPage
         var choice = await DisplayActionSheet("أدوات الدقة", "إلغاء", null,
             "الإدخال الرقمي");
         if (choice == "الإدخال الرقمي")
-            await OnNumericInputMenuAsync();
-    }
-
-    private async Task OnNumericInputMenuAsync()
-    {
-        OnNumericInputClicked(this, EventArgs.Empty);
-        await Task.CompletedTask;
+            OnNumericInputClicked(this, EventArgs.Empty);
     }
 
     private void RefreshStatus()
