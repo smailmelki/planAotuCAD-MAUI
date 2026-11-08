@@ -16,7 +16,7 @@ public sealed class CadArc : CadEntity
         CenterX = (x1 + x2) / 2f;
         CenterY = (y1 + y2) / 2f;
         Radius = MathF.Sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1)) / 2f;
-        StartAngle = 0;
+        StartAngle = MathF.Atan2(y1 - CenterY, x1 - CenterX) * 180f / MathF.PI;
         SweepAngle = 180;
     }
 
