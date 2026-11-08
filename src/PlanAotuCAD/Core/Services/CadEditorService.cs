@@ -43,9 +43,7 @@ public sealed class CadEditorService
         if (ActiveTool == CadTool.Select)
         {
             if (_isMovingSelection && SelectedEntity is not null)
-            {
                 SelectedEntity.Move(point.X - _lastPoint.X, point.Y - _lastPoint.Y);
-            }
 
             _lastPoint = point;
             return;
@@ -59,7 +57,7 @@ public sealed class CadEditorService
         Update(point);
 
         if (PreviewEntity is not null && IsValid(PreviewEntity))
-            Document.Entities.Add(PreviewEntity);
+            AddEntity(PreviewEntity);
 
         PreviewEntity = null;
         _isMovingSelection = false;
@@ -70,13 +68,39 @@ public sealed class CadEditorService
         if (!IsValid(entity))
             return false;
 
+        entity.LayerId = Document.ActiveLayerId;
         Document.Entities.Add(entity);
+        return true;
+    }
+
+    public bool SetActiveLayer(string layerId)
+    {
+        var layer = Document.Layers.FirstOrDefault(item => item.Id == layerId);
+        if (layer is null || layer.IsLocked || layer.IsFrozen)
+            return false;
+
+        Document.ActiveLayerId = layerId;
+        return true;
+    }
+
+    public bool AddLayer(string name, string colorHex = "#F4F6FA")
+    {
+        if (string.IsNullOrWhiteSpace(name) ||
+            Document.Layers.Any(layer => string.Equals(layer.Name, name.Trim(), StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        Document.Layers.Add(new CadLayer
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Name = name.Trim(),
+            ColorHex = colorHex
+        });
         return true;
     }
 
     public void DeleteSelection()
     {
-        if (SelectedEntity is null)
+        if (SelectedEntity is null || IsLayerLocked(SelectedEntity.LayerId))
             return;
 
         Document.Entities.Remove(SelectedEntity);
@@ -88,6 +112,22 @@ public sealed class CadEditorService
     {
         ClearSelection();
         Document = document ?? new CadDocument();
+
+        if (Document.Layers is null || Document.Layers.Count == 0)
+            Document.Layers = new List<CadLayer> { new() };
+
+        if (Document.Entities is null)
+            Document.Entities = new List<CadEntity>();
+
+        if (!Document.Layers.Any(layer => layer.Id == Document.ActiveLayerId))
+            Document.ActiveLayerId = Document.Layers[0].Id;
+
+        foreach (var entity in Document.Entities)
+        {
+            if (string.IsNullOrWhiteSpace(entity.LayerId) ||
+                !Document.Layers.Any(layer => layer.Id == entity.LayerId))
+                entity.LayerId = "0";
+        }
     }
 
     public void CancelCurrentOperation()
@@ -103,11 +143,23 @@ public sealed class CadEditorService
         SelectedEntity = Document.Entities
             .AsEnumerable()
             .Reverse()
-            .FirstOrDefault(entity => entity.HitTest(point, tolerance));
+            .FirstOrDefault(entity =>
+                !IsLayerHidden(entity.LayerId) &&
+                !IsLayerLocked(entity.LayerId) &&
+                entity.HitTest(point, tolerance));
 
         if (SelectedEntity is not null)
             SelectedEntity.IsSelected = true;
     }
+
+    private bool IsLayerHidden(string layerId)
+    {
+        var layer = Document.GetLayer(layerId);
+        return !layer.IsVisible || layer.IsFrozen;
+    }
+
+    private bool IsLayerLocked(string layerId) =>
+        Document.GetLayer(layerId).IsLocked;
 
     private void ClearSelection()
     {
@@ -123,10 +175,7 @@ public sealed class CadEditorService
         {
             CadTool.Line => new CadLine(start.X, start.Y, end.X, end.Y),
             CadTool.Rectangle => new CadRectangle(start.X, start.Y, end.X, end.Y),
-            CadTool.Circle => new CadCircle(
-                start.X,
-                start.Y,
-                Distance(start, end)),
+            CadTool.Circle => new CadCircle(start.X, start.Y, Distance(start, end)),
             _ => null!
         };
     }
@@ -136,26 +185,17 @@ public sealed class CadEditorService
         CadLine line =>
             float.IsFinite(line.StartX) && float.IsFinite(line.StartY) &&
             float.IsFinite(line.EndX) && float.IsFinite(line.EndY) &&
-            Distance(
-                new PointF(line.StartX, line.StartY),
-                new PointF(line.EndX, line.EndY)) > 0.001f,
-
+            Distance(new PointF(line.StartX, line.StartY), new PointF(line.EndX, line.EndY)) > 0.001f,
         CadRectangle rectangle =>
             float.IsFinite(rectangle.StartX) && float.IsFinite(rectangle.StartY) &&
             float.IsFinite(rectangle.EndX) && float.IsFinite(rectangle.EndY) &&
             rectangle.Width > 0.001f && rectangle.Height > 0.001f,
-
         CadCircle circle =>
             float.IsFinite(circle.CenterX) && float.IsFinite(circle.CenterY) &&
             float.IsFinite(circle.Radius) && circle.Radius > 0.001f,
-
         _ => false
     };
 
-    private static float Distance(PointF a, PointF b)
-    {
-        return MathF.Sqrt(
-            MathF.Pow(b.X - a.X, 2) +
-            MathF.Pow(b.Y - a.Y, 2));
-    }
+    private static float Distance(PointF a, PointF b) =>
+        MathF.Sqrt(MathF.Pow(b.X - a.X, 2) + MathF.Pow(b.Y - a.Y, 2));
 }
