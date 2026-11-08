@@ -134,9 +134,9 @@ public sealed class CadCanvasDrawable : IDrawable
                 }
                 else
                 {
-                    canvas.DrawLine(a, b);
-                    canvas.DrawLine(b, c);
-                    canvas.DrawLine(c, a);
+                    canvas.DrawLine(a.X, a.Y, b.X, b.Y);
+                    canvas.DrawLine(b.X, b.Y, c.X, c.Y);
+                    canvas.DrawLine(c.X, c.Y, a.X, a.Y);
                 }
                 break;
             case CadArc arc:
@@ -157,7 +157,7 @@ public sealed class CadCanvasDrawable : IDrawable
             var angle = start + sweep * i / segments;
             var next = new PointF(arc.CenterX + arc.Radius * MathF.Cos(angle),
                                   arc.CenterY + arc.Radius * MathF.Sin(angle));
-            canvas.DrawLine(previous, next);
+            canvas.DrawLine(previous.X, previous.Y, next.X, next.Y);
             previous = next;
         }
     }
