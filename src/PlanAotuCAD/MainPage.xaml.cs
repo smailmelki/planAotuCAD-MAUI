@@ -165,12 +165,13 @@ public partial class MainPage : ContentPage
             CadTool.Triangle => "X;Y;Width;Height",
             CadTool.Arc => "Center X;Center Y;Radius;Start Angle;Sweep Angle",
             CadTool.Polygon => "Center X;Center Y;Radius;Sides (3-32)",
+            CadTool.Polyline => "X1;Y1;X2;Y2;... (at least 2 points)",
             _ => string.Empty
         };
 
         if (string.IsNullOrEmpty(format))
         {
-            await DisplayAlert("الإدخال الرقمي", "اختر أداة هندسية تدعم الإدخال الرقمي. أداة POLYLINE تعتمد على السحب.", "موافق");
+            await DisplayAlert("الإدخال الرقمي", "اختر أداة هندسية تدعم الإدخال الرقمي.", "موافق");
             return;
         }
 
@@ -187,8 +188,11 @@ public partial class MainPage : ContentPage
 
         var values = input.Split(';', StringSplitOptions.TrimEntries);
         var expectedCount = _editor.ActiveTool switch { CadTool.Circle => 3, CadTool.Arc => 5, _ => 4 };
+        var invalidCount = _editor.ActiveTool == CadTool.Polyline
+            ? values.Length < 4 || values.Length % 2 != 0
+            : values.Length != expectedCount;
 
-        if (values.Length != expectedCount ||
+        if (invalidCount ||
             values.Any(value =>
                 !float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ||
                 !float.IsFinite(parsed)))
@@ -210,6 +214,9 @@ public partial class MainPage : ContentPage
             CadTool.Arc => numbers[2] > 0 && numbers[4] > 0 && numbers[4] <= 360,
             CadTool.Polygon => numbers[2] > 0 && numbers[3] >= 3 && numbers[3] <= 32 &&
                                MathF.Abs(numbers[3] - MathF.Round(numbers[3])) < 0.001f,
+            CadTool.Polyline => Enumerable.Range(1, numbers.Length / 2 - 1)
+                .Any(i => MathF.Abs(numbers[i * 2] - numbers[(i - 1) * 2]) > 0.001f ||
+                          MathF.Abs(numbers[i * 2 + 1] - numbers[(i - 1) * 2 + 1]) > 0.001f),
             _ => false
         };
 
@@ -228,6 +235,11 @@ public partial class MainPage : ContentPage
             CadTool.Triangle => new CadTriangle(numbers[0], numbers[1], numbers[0] + numbers[2], numbers[1] + numbers[3]),
             CadTool.Arc => new CadArc { CenterX = numbers[0], CenterY = numbers[1], Radius = numbers[2], StartAngle = numbers[3], SweepAngle = numbers[4] },
             CadTool.Polygon => CadEditorService.CreateRegularPolygon(new PointF(numbers[0], numbers[1]), numbers[2], (int)numbers[3]),
+            CadTool.Polyline => new CadPolyline
+            {
+                Points = Enumerable.Range(0, numbers.Length / 2)
+                    .Select(i => new CadVertex(numbers[i * 2], numbers[i * 2 + 1])).ToList()
+            },
             _ => null!
         };
 
