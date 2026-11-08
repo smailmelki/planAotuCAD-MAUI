@@ -79,7 +79,9 @@ public sealed class CadEditorService
             return;
         }
 
-        PreviewEntity = CreateEntity(point, point);
+        PreviewEntity = ActiveTool == CadTool.Polyline
+            ? new CadPolyline { Points = { new CadVertex(point.X, point.Y) } }
+            : CreateEntity(point, point);
     }
 
     public void Update(PointF point)
@@ -92,7 +94,17 @@ public sealed class CadEditorService
             return;
         }
 
-        PreviewEntity = CreateEntity(_startPoint, point);
+        if (ActiveTool == CadTool.Polyline && PreviewEntity is CadPolyline polyline)
+        {
+            var last = polyline.Points[^1];
+            var dx = point.X - last.X; var dy = point.Y - last.Y;
+            if (dx * dx + dy * dy >= 0.25f)
+                polyline.Points.Add(new CadVertex(point.X, point.Y));
+        }
+        else
+        {
+            PreviewEntity = CreateEntity(_startPoint, point);
+        }
     }
 
     public void End(PointF point)
@@ -317,8 +329,23 @@ public sealed class CadEditorService
         CadTool.Ellipse => new CadEllipse(start.X, start.Y, end.X, end.Y),
         CadTool.Triangle => new CadTriangle(start.X, start.Y, end.X, end.Y),
         CadTool.Arc => new CadArc(start.X, start.Y, end.X, end.Y),
+        CadTool.Polygon => CreateRegularPolygon(new PointF((start.X + end.X) / 2f, (start.Y + end.Y) / 2f), Distance(start, end) / 2f, 6),
         _ => null!
     };
+
+    public static CadPolyline CreateRegularPolygon(PointF center, float radius, int sides)
+    {
+        sides = Math.Clamp(sides, 3, 32);
+        var polygon = new CadPolyline { Closed = true };
+        for (var i = 0; i < sides; i++)
+        {
+            var angle = -MathF.PI / 2f + 2f * MathF.PI * i / sides;
+            polygon.Points.Add(new CadVertex(
+                center.X + radius * MathF.Cos(angle),
+                center.Y + radius * MathF.Sin(angle)));
+        }
+        return polygon;
+    }
 
     private static bool IsValid(CadEntity entity) => entity switch
     {
@@ -338,6 +365,9 @@ public sealed class CadEditorService
             float.IsFinite(arc.Radius) && float.IsFinite(arc.StartAngle) &&
             float.IsFinite(arc.SweepAngle) && arc.Radius > 0.001f &&
             arc.SweepAngle > 0 && arc.SweepAngle <= 360,
+        CadPolyline polyline => polyline.Points is not null &&
+            polyline.Points.Count >= (polyline.Closed ? 3 : 2) &&
+            polyline.Points.All(p => float.IsFinite(p.X) && float.IsFinite(p.Y)),
         _ => false
     };
 
