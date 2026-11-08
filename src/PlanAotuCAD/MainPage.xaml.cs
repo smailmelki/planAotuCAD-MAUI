@@ -532,6 +532,96 @@ public partial class MainPage : ContentPage
         }
     }
 
+    // قوائم الاختصاصات: تبقي الواجهة الرئيسية نظيفة وتعرض الأوامر عند الحاجة.
+    private async void OnDrawGroupClicked(object? sender, EventArgs e)
+    {
+        var items = new[]
+        {
+            "تحديد", "خط", "مستطيل", "دائرة", "بيضاوي",
+            "مثلث", "قوس", "متعدد الخطوط", "مضلع"
+        };
+        var choice = await DisplayActionSheet("أدوات الرسم الهندسي", "إلغاء", null, items);
+        var tool = choice switch
+        {
+            "تحديد" => CadTool.Select,
+            "خط" => CadTool.Line,
+            "مستطيل" => CadTool.Rectangle,
+            "دائرة" => CadTool.Circle,
+            "بيضاوي" => CadTool.Ellipse,
+            "مثلث" => CadTool.Triangle,
+            "قوس" => CadTool.Arc,
+            "متعدد الخطوط" => CadTool.Polyline,
+            "مضلع" => CadTool.Polygon,
+            _ => (CadTool?)null
+        };
+        if (tool.HasValue) SetActiveTool(tool.Value);
+    }
+
+    private async void OnEditGroupClicked(object? sender, EventArgs e)
+    {
+        var choice = await DisplayActionSheet("التحديد والتعديل", "إلغاء", null,
+            "تحديد العناصر", "حذف المحدد", "تراجع", "إعادة");
+        switch (choice)
+        {
+            case "تحديد العناصر": SetActiveTool(CadTool.Select); break;
+            case "حذف المحدد": OnDeleteClicked(this, EventArgs.Empty); break;
+            case "تراجع": OnUndoClicked(this, EventArgs.Empty); break;
+            case "إعادة": OnRedoClicked(this, EventArgs.Empty); break;
+        }
+    }
+
+    private async void OnLayersGroupClicked(object? sender, EventArgs e)
+    {
+        var choice = await DisplayActionSheet("تنظيم الرسم", "إلغاء", null,
+            "إدارة الطبقات", "خصائص العنصر");
+        if (choice == "إدارة الطبقات") await OnLayersMenuAsync();
+        else if (choice == "خصائص العنصر") await TogglePropertiesAsync();
+    }
+
+    private async Task OnLayersMenuAsync()
+    {
+        OnLayersClicked(this, EventArgs.Empty);
+        await Task.CompletedTask;
+    }
+
+    private async Task TogglePropertiesAsync()
+    {
+        await OnPropertiesMenuAsync();
+    }
+
+    private async Task OnPropertiesMenuAsync()
+    {
+        OnPropertiesClicked(this, EventArgs.Empty);
+        await Task.CompletedTask;
+    }
+
+    private async void OnFilesGroupClicked(object? sender, EventArgs e)
+    {
+        var choice = await DisplayActionSheet("إدارة الملفات", "إلغاء", null,
+            "فتح مشروع", "حفظ المشروع", "استيراد DXF", "تصدير DXF");
+        switch (choice)
+        {
+            case "فتح مشروع": OnOpenClicked(this, EventArgs.Empty); break;
+            case "حفظ المشروع": OnSaveClicked(this, EventArgs.Empty); break;
+            case "استيراد DXF": OnImportDxfClicked(this, EventArgs.Empty); break;
+            case "تصدير DXF": OnExportDxfClicked(this, EventArgs.Empty); break;
+        }
+    }
+
+    private async void OnViewGroupClicked(object? sender, EventArgs e)
+    {
+        var choice = await DisplayActionSheet("أدوات الدقة", "إلغاء", null,
+            "الإدخال الرقمي");
+        if (choice == "الإدخال الرقمي")
+            await OnNumericInputMenuAsync();
+    }
+
+    private async Task OnNumericInputMenuAsync()
+    {
+        OnNumericInputClicked(this, EventArgs.Empty);
+        await Task.CompletedTask;
+    }
+
     private void RefreshStatus()
     {
         EntityCountLabel.Text = $"{_editor.Document.EntityCount} entities";
