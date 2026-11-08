@@ -4,121 +4,185 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="PlanAotuCAD.MainPage"
     FlowDirection="LeftToRight"
-    BackgroundColor="#E9EEF4">
+    BackgroundColor="#101820">
 
     <ContentPage.Resources>
-        <Color x:Key="Ink">#172638</Color>
-        <Color x:Key="Muted">#8291A3</Color>
-        <Color x:Key="Line">#DCE3EB</Color>
-        <Style x:Key="DockButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#24364B"/>
-            <Setter Property="TextColor" Value="#F4F7FB"/>
+        <Color x:Key="CanvasBg">#171F29</Color>
+        <Color x:Key="PanelBg">#202B38</Color>
+        <Color x:Key="PanelAlt">#263545</Color>
+        <Color x:Key="Accent">#1596E8</Color>
+        <Color x:Key="Muted">#9BAABD</Color>
+        <Style x:Key="ToolButton" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="#263545"/>
+            <Setter Property="TextColor" Value="#F2F6FA"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="10,7"/>
-            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Padding" Value="7,5"/>
+            <Setter Property="CornerRadius" Value="7"/>
             <Setter Property="HeightRequest" Value="66"/>
-            <Setter Property="WidthRequest" Value="88"/>
-            <Setter Property="ContentLayout" Value="Top,4"/>
+            <Setter Property="WidthRequest" Value="76"/>
+            <Setter Property="ContentLayout" Value="Top,3"/>
+            <Setter Property="BorderColor" Value="#3B5065"/>
             <Setter Property="BorderWidth" Value="1"/>
-            <Setter Property="BorderColor" Value="#3C5068"/>
         </Style>
-        <Style x:Key="HeaderButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#26394F"/>
-            <Setter Property="TextColor" Value="#EAF0F7"/>
+        <Style x:Key="TabButton" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="TextColor" Value="#DCE7F2"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="HeightRequest" Value="42"/>
+        </Style>
+        <Style x:Key="SmallCommand" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="#304459"/>
+            <Setter Property="TextColor" Value="White"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="11,7"/>
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="HeightRequest" Value="38"/>
-            <Setter Property="ContentLayout" Value="Left,6"/>
         </Style>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="0">
-        <!-- رأس التطبيق: هوية المشروع وأوامر الملف -->
-        <Grid Grid.Row="0" BackgroundColor="#142235" Padding="16,9"
-              ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-            <VerticalStackLayout Spacing="0" VerticalOptions="Center">
-                <Label Text="MelkiCAD" TextColor="White" FontSize="20" FontAttributes="Bold"/>
-                <Label Text="محرر المخططات الهندسية" TextColor="#AAB9CA" FontSize="10"/>
-            </VerticalStackLayout>
-            <HorizontalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center">
-                <Button Text="تراجع" ImageSource="cad_undo.svg" Style="{StaticResource HeaderButton}" Clicked="OnUndoClicked"/>
-                <Button Text="إعادة" ImageSource="cad_redo.svg" Style="{StaticResource HeaderButton}" Clicked="OnRedoClicked"/>
-                <Button Text="فتح" Style="{StaticResource HeaderButton}" Clicked="OnOpenClicked"/>
-                <Button Text="حفظ" ImageSource="cad_save.svg" BackgroundColor="#147D60" TextColor="White"
-                        Style="{StaticResource HeaderButton}" Clicked="OnSaveClicked"/>
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto" RowSpacing="0">
+        <!-- شريط العنوان -->
+        <Grid Grid.Row="0" BackgroundColor="#111A24" Padding="12,7"
+              ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            <HorizontalStackLayout Spacing="9" VerticalOptions="Center">
+                <Border BackgroundColor="#1689D4" StrokeThickness="0" StrokeShape="RoundRectangle 7" Padding="7">
+                    <Label Text="M" FontSize="17" FontAttributes="Bold" TextColor="White"/>
+                </Border>
+                <VerticalStackLayout Spacing="0">
+                    <Label Text="MelkiCAD" TextColor="White" FontSize="17" FontAttributes="Bold"/>
+                    <Label Text="NATIVE CAD WORKSPACE" TextColor="#91A5BA" FontSize="8" CharacterSpacing="1.2"/>
+                </VerticalStackLayout>
             </HorizontalStackLayout>
-            <Label Grid.Column="2" Text="CAD  •  NATIVE" TextColor="#8297AD" FontSize="10"
-                   VerticalOptions="Center" CharacterSpacing="1"/>
+            <HorizontalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center" HorizontalOptions="Center">
+                <Button Text="↶" Style="{StaticResource SmallCommand}" Clicked="OnUndoClicked"/>
+                <Button Text="↷" Style="{StaticResource SmallCommand}" Clicked="OnRedoClicked"/>
+                <Button Text="فتح" Style="{StaticResource SmallCommand}" Clicked="OnOpenClicked"/>
+                <Button Text="حفظ" BackgroundColor="#147D60" Style="{StaticResource SmallCommand}" Clicked="OnSaveClicked"/>
+            </HorizontalStackLayout>
+            <Label Grid.Column="2" Text="MODEL" TextColor="#8196AA" FontSize="10" VerticalOptions="Center"/>
         </Grid>
 
-        <!-- شريط الاختصاصات: قوائم مصنفة بدلاً من ازدحام الأدوات -->
-        <ScrollView Grid.Row="1" Orientation="Horizontal"
-                    BackgroundColor="#1B2B3E" HorizontalScrollBarVisibility="Never">
-            <HorizontalStackLayout Padding="12,9" Spacing="8">
+        <!-- تبويبات الاختصاصات -->
+        <ScrollView Grid.Row="1" Orientation="Horizontal" BackgroundColor="#1B2937"
+                    HorizontalScrollBarVisibility="Never">
+            <HorizontalStackLayout Padding="9,5" Spacing="4">
                 <Button x:Name="DrawGroupButton" Text="الرسم" ImageSource="cad_draw.svg"
-                        Style="{StaticResource DockButton}" Clicked="OnDrawGroupClicked"/>
-                <Button x:Name="EditGroupButton" Text="التعديل والتحديد" ImageSource="cad_edit.svg"
-                        Style="{StaticResource DockButton}" Clicked="OnEditGroupClicked"/>
+                        Style="{StaticResource TabButton}" Clicked="OnDrawGroupClicked"/>
+                <Button x:Name="EditGroupButton" Text="التعديل" ImageSource="cad_edit.svg"
+                        Style="{StaticResource TabButton}" Clicked="OnEditGroupClicked"/>
                 <Button x:Name="LayersGroupButton" Text="الطبقات والخصائص" ImageSource="cad_layers.svg"
-                        Style="{StaticResource DockButton}" Clicked="OnLayersGroupClicked"/>
+                        Style="{StaticResource TabButton}" Clicked="OnLayersGroupClicked"/>
                 <Button x:Name="FilesGroupButton" Text="الملفات و DXF" ImageSource="cad_file.svg"
-                        Style="{StaticResource DockButton}" Clicked="OnFilesGroupClicked"/>
-                <Button x:Name="ViewGroupButton" Text="الدقة والإدخال" ImageSource="cad_view.svg"
-                        Style="{StaticResource DockButton}" Clicked="OnViewGroupClicked"/>
+                        Style="{StaticResource TabButton}" Clicked="OnFilesGroupClicked"/>
+                <Button x:Name="ViewGroupButton" Text="العرض والدقة" ImageSource="cad_view.svg"
+                        Style="{StaticResource TabButton}" Clicked="OnViewGroupClicked"/>
             </HorizontalStackLayout>
         </ScrollView>
 
-        <!-- مساحة الرسم هي مركز الواجهة -->
-        <Grid Grid.Row="2" Padding="10" BackgroundColor="#E9EEF4">
-            <Border Stroke="#D5DEE8" StrokeThickness="1" BackgroundColor="#FFFFFF"
-                    StrokeShape="RoundRectangle 10" Padding="0">
+        <!-- شريط الأدوات المتغير حسب التبويب -->
+        <Grid Grid.Row="2" BackgroundColor="#202D3B" Padding="8,6">
+            <ScrollView x:Name="DrawToolsPanel" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="6">
+                    <Button Text="تحديد" ImageSource="cad_edit.svg" Style="{StaticResource ToolButton}" Clicked="OnSelectToolClicked"/>
+                    <Button Text="خط" Style="{StaticResource ToolButton}" Clicked="OnLineToolClicked"/>
+                    <Button Text="مستطيل" Style="{StaticResource ToolButton}" Clicked="OnRectToolClicked"/>
+                    <Button Text="دائرة" Style="{StaticResource ToolButton}" Clicked="OnCircleToolClicked"/>
+                    <Button Text="بيضاوي" Style="{StaticResource ToolButton}" Clicked="OnEllipseToolClicked"/>
+                    <Button Text="مثلث" Style="{StaticResource ToolButton}" Clicked="OnTriangleToolClicked"/>
+                    <Button Text="قوس" Style="{StaticResource ToolButton}" Clicked="OnArcToolClicked"/>
+                    <Button Text="متعدد الخطوط" Style="{StaticResource ToolButton}" Clicked="OnPolylineToolClicked"/>
+                    <Button Text="مضلع" Style="{StaticResource ToolButton}" Clicked="OnPolygonToolClicked"/>
+                </HorizontalStackLayout>
+            </ScrollView>
+            <ScrollView x:Name="EditToolsPanel" IsVisible="False" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="6">
+                    <Button Text="تحديد" ImageSource="cad_edit.svg" Style="{StaticResource ToolButton}" Clicked="OnSelectToolClicked"/>
+                    <Button Text="حذف المحدد" Style="{StaticResource ToolButton}" Clicked="OnDeleteClicked"/>
+                    <Button Text="تراجع" ImageSource="cad_undo.svg" Style="{StaticResource ToolButton}" Clicked="OnUndoClicked"/>
+                    <Button Text="إعادة" ImageSource="cad_redo.svg" Style="{StaticResource ToolButton}" Clicked="OnRedoClicked"/>
+                </HorizontalStackLayout>
+            </ScrollView>
+            <ScrollView x:Name="LayersToolsPanel" IsVisible="False" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="6">
+                    <Button Text="إدارة الطبقات" ImageSource="cad_layers.svg" Style="{StaticResource ToolButton}" Clicked="OnLayersClicked"/>
+                    <Button Text="خصائص العنصر" Style="{StaticResource ToolButton}" Clicked="OnPropertiesClicked"/>
+                </HorizontalStackLayout>
+            </ScrollView>
+            <ScrollView x:Name="FilesToolsPanel" IsVisible="False" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="6">
+                    <Button Text="فتح مشروع" Style="{StaticResource ToolButton}" Clicked="OnOpenClicked"/>
+                    <Button Text="حفظ مشروع" ImageSource="cad_save.svg" Style="{StaticResource ToolButton}" Clicked="OnSaveClicked"/>
+                    <Button Text="استيراد DXF" Style="{StaticResource ToolButton}" Clicked="OnImportDxfClicked"/>
+                    <Button Text="تصدير DXF" Style="{StaticResource ToolButton}" Clicked="OnExportDxfClicked"/>
+                </HorizontalStackLayout>
+            </ScrollView>
+            <ScrollView x:Name="ViewToolsPanel" IsVisible="False" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="6">
+                    <Button Text="إدخال رقمي" ImageSource="cad_view.svg" Style="{StaticResource ToolButton}" Clicked="OnNumericInputClicked"/>
+                    <Label Text="تكبير: عجلة الفأرة / ضم إصبعين    •    تحريك: زر الفأرة الأوسط"
+                           TextColor="#A9B9C9" FontSize="11" VerticalOptions="Center" Margin="8,0"/>
+                </HorizontalStackLayout>
+            </ScrollView>
+        </Grid>
+
+        <!-- مساحة الرسم واللوحة الجانبية -->
+        <Grid Grid.Row="3" Padding="7" ColumnDefinitions="*,Auto" ColumnSpacing="7">
+            <Border Stroke="#34485B" StrokeThickness="1" BackgroundColor="{StaticResource CanvasBg}"
+                    StrokeShape="RoundRectangle 5" Padding="0">
                 <Grid RowDefinitions="Auto,*">
-                    <Grid BackgroundColor="#F5F7FA" Padding="13,7" ColumnDefinitions="*,Auto">
-                        <Label Text="مساحة العمل" TextColor="#26394F" FontSize="12"
+                    <Grid BackgroundColor="#202C39" Padding="10,5" ColumnDefinitions="*,Auto">
+                        <Label Text="MODEL SPACE" TextColor="#D9E5F0" FontSize="10"
                                FontAttributes="Bold" VerticalOptions="Center"/>
-                        <Label Grid.Column="1" Text="زر الفأرة الأوسط للتحريك  •  عجلة الفأرة للتكبير"
-                               TextColor="#8291A3" FontSize="10" VerticalOptions="Center"/>
+                        <Label Grid.Column="1" Text="شبكة الرسم  •  إحداثيات النموذج"
+                               TextColor="#8FA2B5" FontSize="9" VerticalOptions="Center"/>
                     </Grid>
-                    <GraphicsView x:Name="CadView" Grid.Row="1" BackgroundColor="#FCFDFE"
+                    <GraphicsView x:Name="CadView" Grid.Row="1" BackgroundColor="#171F29"
                                   HorizontalOptions="Fill" VerticalOptions="Fill"/>
                 </Grid>
             </Border>
-        </Grid>
-
-        <!-- خصائص العنصر تظهر عند التحديد وتبقى مدمجة -->
-        <Border x:Name="PropertiesPanel" Grid.Row="3" IsVisible="False"
-                BackgroundColor="White" Stroke="#DCE3EB" StrokeThickness="1"
-                Padding="12,8" Margin="10,0,10,8" StrokeShape="RoundRectangle 9">
-            <Grid RowDefinitions="Auto,Auto" RowSpacing="7">
-                <Label Text="خصائص العنصر المحدد" TextColor="#26394F"
-                       FontAttributes="Bold" FontSize="12"/>
-                <ScrollView Grid.Row="1" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                        <Entry x:Name="PropertyNameEntry" Placeholder="اسم العنصر" WidthRequest="145"/>
-                        <Entry x:Name="PropertyColorEntry" Placeholder="اللون #RRGGBB" WidthRequest="125"/>
-                        <Entry x:Name="PropertyWidthEntry" Placeholder="سمك الخط" WidthRequest="95" Keyboard="Numeric"/>
-                        <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
-                            <Label Text="تعبئة" TextColor="#526174" FontSize="12" VerticalOptions="Center"/>
+            <Border x:Name="PropertiesPanel" Grid.Column="1" IsVisible="False"
+                    WidthRequest="250" BackgroundColor="#202D3B" Stroke="#34485B"
+                    StrokeThickness="1" StrokeShape="RoundRectangle 5" Padding="10">
+                <ScrollView>
+                    <VerticalStackLayout Spacing="9">
+                        <Label Text="خصائص العنصر" TextColor="White" FontSize="13" FontAttributes="Bold"/>
+                        <Label Text="الاسم" TextColor="#AAB9C8" FontSize="10"/>
+                        <Entry x:Name="PropertyNameEntry" Placeholder="اسم العنصر"/>
+                        <Label Text="اللون" TextColor="#AAB9C8" FontSize="10"/>
+                        <Entry x:Name="PropertyColorEntry" Placeholder="#RRGGBB"/>
+                        <Label Text="سمك الخط" TextColor="#AAB9C8" FontSize="10"/>
+                        <Entry x:Name="PropertyWidthEntry" Placeholder="سمك الخط" Keyboard="Numeric"/>
+                        <HorizontalStackLayout Spacing="8">
+                            <Label Text="تعبئة" TextColor="White" VerticalOptions="Center"/>
                             <Switch x:Name="PropertyFillSwitch"/>
                         </HorizontalStackLayout>
-                        <Picker x:Name="PropertyLayerPicker" Title="الطبقة" WidthRequest="145"/>
-                        <Button Text="تطبيق" BackgroundColor="#147D60" TextColor="White"
-                                CornerRadius="8" Clicked="OnApplyPropertiesClicked"/>
-                    </HorizontalStackLayout>
+                        <Picker x:Name="PropertyLayerPicker" Title="الطبقة" TextColor="White"/>
+                        <Button Text="تطبيق الخصائص" BackgroundColor="#147D60" TextColor="White"
+                                Clicked="OnApplyPropertiesClicked"/>
+                    </VerticalStackLayout>
                 </ScrollView>
-            </Grid>
-        </Border>
+            </Border>
+        </Grid>
 
-        <!-- شريط الحالة -->
-        <Grid Grid.Row="4" BackgroundColor="#142235" Padding="13,7"
-              ColumnDefinitions="*,Auto,Auto" ColumnSpacing="18">
-            <Label x:Name="StatusLabel" Text="جاهز — اختر اختصاصاً من شريط الأدوات"
-                   TextColor="#DCE5EF" FontSize="11" VerticalOptions="Center"/>
-            <Label Grid.Column="1" Text="MODEL SPACE" TextColor="#8297AD"
-                   FontSize="9" VerticalOptions="Center"/>
+        <!-- خصائص مختصرة أسفل مساحة العمل عند عدم فتح اللوحة الجانبية -->
+        <Grid Grid.Row="4" BackgroundColor="#202D3B" Padding="8,4" ColumnDefinitions="*,Auto,Auto">
+            <Label x:Name="StatusLabel" Text="جاهز — اختر أداة من الشريط"
+                   TextColor="#D7E2ED" FontSize="10" VerticalOptions="Center"/>
+            <Label Grid.Column="1" Text="MODEL" TextColor="#8FA2B5" FontSize="9" VerticalOptions="Center" Margin="6,0"/>
             <Label x:Name="EntityCountLabel" Grid.Column="2" Text="0 عنصر"
-                   TextColor="#B9C8D8" FontSize="11" VerticalOptions="Center"/>
+                   TextColor="#D7E2ED" FontSize="10" VerticalOptions="Center"/>
+        </Grid>
+
+        <!-- شريط تنقل سفلي مناسب للمس -->
+        <Grid Grid.Row="5" BackgroundColor="#111A24" Padding="5,4"
+              ColumnDefinitions="*,*,*,*,*">
+            <Button Grid.Column="0" Text="رسم" ImageSource="cad_draw.svg" Style="{StaticResource TabButton}" Clicked="OnDrawGroupClicked"/>
+            <Button Grid.Column="1" Text="تعديل" ImageSource="cad_edit.svg" Style="{StaticResource TabButton}" Clicked="OnEditGroupClicked"/>
+            <Button Grid.Column="2" Text="طبقات" ImageSource="cad_layers.svg" Style="{StaticResource TabButton}" Clicked="OnLayersGroupClicked"/>
+            <Button Grid.Column="3" Text="ملفات" ImageSource="cad_file.svg" Style="{StaticResource TabButton}" Clicked="OnFilesGroupClicked"/>
+            <Button Grid.Column="4" Text="قياس" ImageSource="cad_view.svg" Style="{StaticResource TabButton}" Clicked="OnViewGroupClicked"/>
         </Grid>
     </Grid>
 </ContentPage>
