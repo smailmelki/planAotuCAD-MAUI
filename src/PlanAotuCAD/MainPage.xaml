@@ -18,7 +18,6 @@
             <Setter Property="CornerRadius" Value="9"/>
             <Setter Property="HeightRequest" Value="66"/>
             <Setter Property="WidthRequest" Value="88"/>
-            <Setter Property="ImageWidth" Value="25"/>
             <Setter Property="ContentLayout" Value="Top,4"/>
             <Setter Property="BorderWidth" Value="1"/>
             <Setter Property="BorderColor" Value="#3C5068"/>
@@ -30,7 +29,6 @@
             <Setter Property="Padding" Value="11,7"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HeightRequest" Value="38"/>
-            <Setter Property="ImageWidth" Value="18"/>
             <Setter Property="ContentLayout" Value="Left,6"/>
         </Style>
     </ContentPage.Resources>
@@ -55,19 +53,21 @@
         </Grid>
 
         <!-- شريط الاختصاصات: قوائم مصنفة بدلاً من ازدحام الأدوات -->
-        <Grid Grid.Row="1" BackgroundColor="#1B2B3E" Padding="12,9"
-              ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
-            <Button Grid.Column="0" Text="الرسم" ImageSource="cad-draw.svg"
-                    Style="{StaticResource DockButton}" Clicked="OnDrawGroupClicked"/>
-            <Button Grid.Column="1" Text="التعديل والتحديد" ImageSource="cad-edit.svg"
-                    Style="{StaticResource DockButton}" Clicked="OnEditGroupClicked"/>
-            <Button Grid.Column="2" Text="الطبقات والخصائص" ImageSource="cad-layers.svg"
-                    Style="{StaticResource DockButton}" Clicked="OnLayersGroupClicked"/>
-            <Button Grid.Column="3" Text="الملفات و DXF" ImageSource="cad-file.svg"
-                    Style="{StaticResource DockButton}" Clicked="OnFilesGroupClicked"/>
-            <Button Grid.Column="4" Text="الدقة والعرض" ImageSource="cad-view.svg"
-                    Style="{StaticResource DockButton}" Clicked="OnViewGroupClicked"/>
-        </Grid>
+        <ScrollView Grid.Row="1" Orientation="Horizontal"
+                    BackgroundColor="#1B2B3E" HorizontalScrollBarVisibility="Never">
+            <HorizontalStackLayout Padding="12,9" Spacing="8">
+                <Button Text="الرسم" ImageSource="cad-draw.svg"
+                        Style="{StaticResource DockButton}" Clicked="OnDrawGroupClicked"/>
+                <Button Text="التعديل والتحديد" ImageSource="cad-edit.svg"
+                        Style="{StaticResource DockButton}" Clicked="OnEditGroupClicked"/>
+                <Button Text="الطبقات والخصائص" ImageSource="cad-layers.svg"
+                        Style="{StaticResource DockButton}" Clicked="OnLayersGroupClicked"/>
+                <Button Text="الملفات و DXF" ImageSource="cad-file.svg"
+                        Style="{StaticResource DockButton}" Clicked="OnFilesGroupClicked"/>
+                <Button Text="الدقة والإدخال" ImageSource="cad-view.svg"
+                        Style="{StaticResource DockButton}" Clicked="OnViewGroupClicked"/>
+            </HorizontalStackLayout>
+        </ScrollView>
 
         <!-- مساحة الرسم هي مركز الواجهة -->
         <Grid Grid.Row="2" Padding="10" BackgroundColor="#E9EEF4">
