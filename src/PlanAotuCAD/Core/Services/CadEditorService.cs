@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Globalization;
 using Microsoft.Maui.Graphics;
 using PlanAotuCAD.Core.Models;
 using PlanAotuCAD.Core.Tools;
@@ -185,9 +186,7 @@ public sealed class CadEditorService
     public bool SetLayerColor(string layerId, string colorHex)
     {
         var layer = Document.Layers.FirstOrDefault(x => x.Id == layerId);
-        if (layer is null || string.IsNullOrWhiteSpace(colorHex) ||
-            !colorHex.StartsWith("#", StringComparison.Ordinal) ||
-            (colorHex.Length != 7 && colorHex.Length != 9))
+        if (layer is null || !IsValidColorHex(colorHex))
             return false;
         var before = Snapshot();
         layer.ColorHex = colorHex;
@@ -238,7 +237,8 @@ public sealed class CadEditorService
     public bool UpdateSelectedProperties(string? name, string? colorHex, float strokeWidth, bool isFilled)
     {
         if (SelectedEntity is null || IsLayerLocked(SelectedEntity.LayerId) ||
-            !float.IsFinite(strokeWidth) || strokeWidth <= 0)
+            !float.IsFinite(strokeWidth) || strokeWidth <= 0 ||
+            (!string.IsNullOrWhiteSpace(colorHex) && !IsValidColorHex(colorHex)))
             return false;
         var before = Snapshot();
         SelectedEntity.Name = name?.Trim() ?? string.Empty;
@@ -335,9 +335,20 @@ public sealed class CadEditorService
             float.IsFinite(triangle.X2) && float.IsFinite(triangle.Y2) &&
             MathF.Abs(triangle.X2-triangle.X1) > 0.001f && MathF.Abs(triangle.Y2-triangle.Y1) > 0.001f,
         CadArc arc => float.IsFinite(arc.CenterX) && float.IsFinite(arc.CenterY) &&
-            float.IsFinite(arc.Radius) && arc.Radius > 0.001f && arc.SweepAngle > 0,
+            float.IsFinite(arc.Radius) && float.IsFinite(arc.StartAngle) &&
+            float.IsFinite(arc.SweepAngle) && arc.Radius > 0.001f &&
+            arc.SweepAngle > 0 && arc.SweepAngle <= 360,
         _ => false
     };
+
+    private static bool IsValidColorHex(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value[0] != '#' ||
+            (value.Length != 7 && value.Length != 9))
+            return false;
+        return uint.TryParse(value.AsSpan(1), NumberStyles.HexNumber,
+            CultureInfo.InvariantCulture, out _);
+    }
 
     private static float Distance(PointF a, PointF b) =>
         MathF.Sqrt(MathF.Pow(b.X-a.X, 2) + MathF.Pow(b.Y-a.Y, 2));
