@@ -4,7 +4,7 @@
     x:Class="PlanAotuCAD.MainPage"
     BackgroundColor="#171B24">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
         <Grid Grid.Row="0"
               BackgroundColor="#222936"
               Padding="10"
@@ -57,7 +57,29 @@
                       HorizontalOptions="Fill"
                       VerticalOptions="Fill" />
 
-        <Grid Grid.Row="2"
+        <Border x:Name="PropertiesPanel"
+                Grid.Row="2"
+                IsVisible="False"
+                BackgroundColor="#202936"
+                Stroke="#3B4656"
+                Padding="8">
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label Text="خصائص العنصر" TextColor="White" VerticalOptions="Center" FontAttributes="Bold" />
+                    <Entry x:Name="PropertyNameEntry" Placeholder="اسم العنصر" WidthRequest="130" />
+                    <Entry x:Name="PropertyColorEntry" Placeholder="#RRGGBB" WidthRequest="105" />
+                    <Entry x:Name="PropertyWidthEntry" Placeholder="سمك الخط" WidthRequest="90" Keyboard="Numeric" />
+                    <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                        <Label Text="تعبئة" TextColor="White" VerticalOptions="Center" />
+                        <Switch x:Name="PropertyFillSwitch" />
+                    </HorizontalStackLayout>
+                    <Picker x:Name="PropertyLayerPicker" Title="الطبقة" WidthRequest="145" />
+                    <Button Text="تطبيق الخصائص" Clicked="OnApplyPropertiesClicked" BackgroundColor="#15803D" />
+                </HorizontalStackLayout>
+            </ScrollView>
+        </Border>
+
+        <Grid Grid.Row="3"
               BackgroundColor="#222936"
               Padding="10"
               ColumnDefinitions="*,Auto">
