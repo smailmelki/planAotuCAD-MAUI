@@ -51,6 +51,9 @@ public partial class MainPage : ContentPage
     private void OnLineToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Line);
     private void OnRectToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Rectangle);
     private void OnCircleToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Circle);
+    private void OnEllipseToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Ellipse);
+    private void OnTriangleToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Triangle);
+    private void OnArcToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Arc);
 
     private void SetActiveTool(CadTool tool)
     {
@@ -60,6 +63,9 @@ public partial class MainPage : ContentPage
         LineButton.BackgroundColor = tool == CadTool.Line ? ActiveColor : InactiveColor;
         RectButton.BackgroundColor = tool == CadTool.Rectangle ? ActiveColor : InactiveColor;
         CircleButton.BackgroundColor = tool == CadTool.Circle ? ActiveColor : InactiveColor;
+        EllipseButton.BackgroundColor = tool == CadTool.Ellipse ? ActiveColor : InactiveColor;
+        TriangleButton.BackgroundColor = tool == CadTool.Triangle ? ActiveColor : InactiveColor;
+        ArcButton.BackgroundColor = tool == CadTool.Arc ? ActiveColor : InactiveColor;
 
         StatusLabel.Text = tool switch
         {
@@ -67,6 +73,9 @@ public partial class MainPage : ContentPage
             CadTool.Line => "LINE: حدد نقطة البداية ثم النهاية",
             CadTool.Rectangle => "RECT: حدد زاويتين متقابلتين",
             CadTool.Circle => "CIRCLE: حدد المركز ثم نصف القطر",
+            CadTool.Ellipse => "ELLIPSE: حدد زاويتين متقابلتين",
+            CadTool.Triangle => "TRIANGLE: حدد حدود المثلث",
+            CadTool.Arc => "ARC: حدد طرفي قطر القوس",
             _ => "Ready"
         };
 
@@ -146,6 +155,9 @@ public partial class MainPage : ContentPage
             CadTool.Line => "X;Y;Length;Angle (degrees)",
             CadTool.Rectangle => "X;Y;Width;Height",
             CadTool.Circle => "Center X;Center Y;Radius",
+            CadTool.Ellipse => "X;Y;Width;Height",
+            CadTool.Triangle => "X;Y;Width;Height",
+            CadTool.Arc => "Center X;Center Y;Radius;Start Angle;Sweep Angle",
             _ => string.Empty
         };
 
@@ -167,7 +179,7 @@ public partial class MainPage : ContentPage
             return;
 
         var values = input.Split(';', StringSplitOptions.TrimEntries);
-        var expectedCount = _editor.ActiveTool == CadTool.Circle ? 3 : 4;
+        var expectedCount = _editor.ActiveTool switch { CadTool.Circle => 3, CadTool.Arc => 5, _ => 4 };
 
         if (values.Length != expectedCount ||
             values.Any(value =>
@@ -187,6 +199,8 @@ public partial class MainPage : ContentPage
             CadTool.Line => numbers[2] > 0,
             CadTool.Rectangle => numbers[2] > 0 && numbers[3] > 0,
             CadTool.Circle => numbers[2] > 0,
+            CadTool.Ellipse or CadTool.Triangle => numbers[2] > 0 && numbers[3] > 0,
+            CadTool.Arc => numbers[2] > 0 && numbers[4] > 0 && numbers[4] <= 360,
             _ => false
         };
 
@@ -201,6 +215,9 @@ public partial class MainPage : ContentPage
             CadTool.Line => CreateLine(numbers),
             CadTool.Rectangle => new CadRectangle(numbers[0], numbers[1], numbers[0] + numbers[2], numbers[1] + numbers[3]),
             CadTool.Circle => new CadCircle(numbers[0], numbers[1], numbers[2]),
+            CadTool.Ellipse => new CadEllipse(numbers[0], numbers[1], numbers[0] + numbers[2], numbers[1] + numbers[3]),
+            CadTool.Triangle => new CadTriangle(numbers[0], numbers[1], numbers[0] + numbers[2], numbers[1] + numbers[3]),
+            CadTool.Arc => new CadArc { CenterX = numbers[0], CenterY = numbers[1], Radius = numbers[2], StartAngle = numbers[3], SweepAngle = numbers[4] },
             _ => null!
         };
 
@@ -223,6 +240,118 @@ public partial class MainPage : ContentPage
             values[1],
             values[0] + values[2] * MathF.Cos(angle),
             values[1] + values[2] * MathF.Sin(angle));
+    }
+
+
+    private void OnUndoClicked(object? sender, EventArgs e)
+    {
+        if (_editor.Undo())
+        {
+            _drawable.Document = _editor.Document;
+            RefreshStatus();
+            StatusLabel.Text = "تم التراجع عن آخر عملية";
+            RefreshCanvas();
+        }
+    }
+
+    private void OnRedoClicked(object? sender, EventArgs e)
+    {
+        if (_editor.Redo())
+        {
+            _drawable.Document = _editor.Document;
+            RefreshStatus();
+            StatusLabel.Text = "تمت إعادة العملية";
+            RefreshCanvas();
+        }
+    }
+
+    private async void OnLayersClicked(object? sender, EventArgs e)
+    {
+        var action = await DisplayActionSheet("إدارة الطبقات", "إلغاء", null,
+            "إضافة طبقة", "إدارة طبقة موجودة");
+        if (action == "إضافة طبقة")
+        {
+            var name = await DisplayPromptAsync("طبقة جديدة", "اسم الطبقة:");
+            if (!string.IsNullOrWhiteSpace(name) && !_editor.AddLayer(name))
+                await DisplayAlert("الطبقات", "الاسم مستخدم أو غير صالح.", "موافق");
+        }
+        else if (action == "إدارة طبقة موجودة")
+        {
+            var labels = _editor.Document.Layers.Select(x => $"{x.Name} [{(x.IsVisible ? "مرئية" : "مخفية")}{(x.IsLocked ? "، مقفلة" : "")}]").ToArray();
+            var selected = await DisplayActionSheet("اختر الطبقة", "إلغاء", null, labels);
+            var index = Array.IndexOf(labels, selected);
+            if (index < 0) return;
+            var layer = _editor.Document.Layers[index];
+            var operation = await DisplayActionSheet($"الطبقة: {layer.Name}", "إلغاء", null,
+                "تعيين كنشطة", "إعادة تسمية", layer.IsVisible ? "إخفاء" : "إظهار",
+                layer.IsLocked ? "فتح القفل" : "قفل", layer.IsFrozen ? "إلغاء التجميد" : "تجميد",
+                "نقل العنصر المحدد إليها", "حذف الطبقة");
+            switch (operation)
+            {
+                case "تعيين كنشطة": _editor.SetActiveLayer(layer.Id); break;
+                case "إعادة تسمية":
+                    var newName = await DisplayPromptAsync("إعادة تسمية", "الاسم الجديد:", initialValue: layer.Name);
+                    if (!string.IsNullOrWhiteSpace(newName)) _editor.RenameLayer(layer.Id, newName);
+                    break;
+                case "إخفاء": _editor.SetLayerVisibility(layer.Id, false); break;
+                case "إظهار": _editor.SetLayerVisibility(layer.Id, true); break;
+                case "قفل": _editor.SetLayerLocked(layer.Id, true); break;
+                case "فتح القفل": _editor.SetLayerLocked(layer.Id, false); break;
+                case "تجميد": _editor.SetLayerFrozen(layer.Id, true); break;
+                case "إلغاء التجميد": _editor.SetLayerFrozen(layer.Id, false); break;
+                case "نقل العنصر المحدد إليها":
+                    if (!_editor.MoveSelectedToLayer(layer.Id))
+                        await DisplayAlert("الطبقات", "حدد عنصراً أولاً، وتأكد أن الطبقة قابلة للتحرير.", "موافق");
+                    break;
+                case "حذف الطبقة":
+                    if (!_editor.DeleteLayer(layer.Id))
+                        await DisplayAlert("الطبقات", "لا يمكن حذف الطبقة الافتراضية أو آخر طبقة.", "موافق");
+                    break;
+            }
+        }
+        _drawable.Document = _editor.Document;
+        RefreshStatus();
+        RefreshCanvas();
+    }
+
+    private async void OnPropertiesClicked(object? sender, EventArgs e)
+    {
+        var entity = _editor.SelectedEntity;
+        if (entity is null)
+        {
+            await DisplayAlert("خصائص العنصر", "حدد عنصراً أولاً.", "موافق");
+            return;
+        }
+
+        var name = await DisplayPromptAsync("اسم العنصر", "الاسم:", initialValue: entity.Name);
+        if (name is null) return;
+        var color = await DisplayPromptAsync("لون العنصر", "لون HEX مثل #FFAA00، أو اتركه فارغاً لاستخدام لون الطبقة:",
+            initialValue: entity.ColorHex ?? string.Empty);
+        if (color is null) return;
+        var widthText = await DisplayPromptAsync("سمك الخط", "أدخل سمك الخط:", initialValue:
+            entity.StrokeWidth.ToString(CultureInfo.InvariantCulture), keyboard: Keyboard.Numeric);
+        if (!float.TryParse(widthText, NumberStyles.Float, CultureInfo.InvariantCulture, out var width) || width <= 0)
+        {
+            await DisplayAlert("خصائص العنصر", "سمك الخط غير صالح.", "موافق");
+            return;
+        }
+        var fillChoice = await DisplayActionSheet("تعبئة العنصر", "إلغاء", null,
+            entity.IsFilled ? "معبأ" : "غير معبأ", entity.IsFilled ? "غير معبأ" : "معبأ");
+        if (fillChoice == "إلغاء" || string.IsNullOrEmpty(fillChoice)) return;
+        if (!string.IsNullOrWhiteSpace(color) &&
+            (!color.StartsWith("#", StringComparison.Ordinal) || (color.Length != 7 && color.Length != 9)))
+        {
+            await DisplayAlert("خصائص العنصر", "صيغة اللون يجب أن تكون #RRGGBB أو #AARRGGBB.", "موافق");
+            return;
+        }
+        _editor.UpdateSelectedProperties(name, color, width, fillChoice == "معبأ");
+        var target = await DisplayActionSheet("طبقة العنصر", "إنهاء", null,
+            _editor.Document.Layers.Select(x => x.Name).ToArray());
+        var targetLayer = _editor.Document.Layers.FirstOrDefault(x => x.Name == target);
+        if (targetLayer is not null) _editor.MoveSelectedToLayer(targetLayer.Id);
+        _drawable.Document = _editor.Document;
+        RefreshStatus();
+        RefreshCanvas();
     }
 
     private void OnDeleteClicked(object? sender, EventArgs e)
