@@ -43,6 +43,7 @@ public partial class MainPage : ContentPage
         CadView.HandlerChanged += OnCadViewHandlerChanged;
 #endif
 
+        ShowToolPanel("edit");
         SetActiveTool(CadTool.Select);
         RefreshStatus();
     }
@@ -65,11 +66,6 @@ public partial class MainPage : ContentPage
             or CadTool.Ellipse or CadTool.Triangle or CadTool.Arc
             or CadTool.Polyline or CadTool.Polygon;
 
-        DrawGroupButton.BackgroundColor = isDrawingTool ? ActiveColor : InactiveColor;
-        EditGroupButton.BackgroundColor = tool == CadTool.Select ? ActiveColor : InactiveColor;
-        LayersGroupButton.BackgroundColor = InactiveColor;
-        FilesGroupButton.BackgroundColor = InactiveColor;
-        ViewGroupButton.BackgroundColor = InactiveColor;
 
         StatusLabel.Text = tool switch
         {
