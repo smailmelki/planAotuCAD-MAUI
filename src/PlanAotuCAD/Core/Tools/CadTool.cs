@@ -8,5 +8,7 @@ public enum CadTool
     Circle,
     Ellipse,
     Triangle,
-    Arc
+    Arc,
+    Polyline,
+    Polygon
 }
