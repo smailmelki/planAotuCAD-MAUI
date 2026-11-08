@@ -95,6 +95,7 @@ public sealed class CadCanvasDrawable : IDrawable
                 CadEllipse => Color.FromArgb("#A78BFA"),
                 CadTriangle => Color.FromArgb("#F59E0B"),
                 CadArc => Color.FromArgb("#FB7185"),
+                CadPolyline => Color.FromArgb("#34D399"),
                  _ => Colors.White
              });
         canvas.FillColor = canvas.StrokeColor;
@@ -142,6 +143,18 @@ public sealed class CadCanvasDrawable : IDrawable
                 break;
             case CadArc arc:
                 DrawArcSegments(canvas, arc);
+                break;
+            case CadPolyline polyline:
+                if (polyline.Points.Count >= 2)
+                {
+                    var path = new PathF();
+                    path.MoveTo(polyline.Points[0].X, polyline.Points[0].Y);
+                    for (var i = 1; i < polyline.Points.Count; i++)
+                        path.LineTo(polyline.Points[i].X, polyline.Points[i].Y);
+                    if (polyline.Closed) path.Close();
+                    if (polyline.Closed && entity.IsFilled) canvas.FillPath(path);
+                    else canvas.DrawPath(path);
+                }
                 break;
         }
     }
