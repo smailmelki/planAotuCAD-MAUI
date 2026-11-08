@@ -42,10 +42,10 @@
                 <Label Text="محرر المخططات الهندسية" TextColor="#AAB9CA" FontSize="10"/>
             </VerticalStackLayout>
             <HorizontalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center">
-                <Button Text="تراجع" ImageSource="cad-undo.svg" Style="{StaticResource HeaderButton}" Clicked="OnUndoClicked"/>
-                <Button Text="إعادة" ImageSource="cad-redo.svg" Style="{StaticResource HeaderButton}" Clicked="OnRedoClicked"/>
+                <Button Text="تراجع" ImageSource="cad_undo.svg" Style="{StaticResource HeaderButton}" Clicked="OnUndoClicked"/>
+                <Button Text="إعادة" ImageSource="cad_redo.svg" Style="{StaticResource HeaderButton}" Clicked="OnRedoClicked"/>
                 <Button Text="فتح" Style="{StaticResource HeaderButton}" Clicked="OnOpenClicked"/>
-                <Button Text="حفظ" ImageSource="cad-save.svg" BackgroundColor="#147D60" TextColor="White"
+                <Button Text="حفظ" ImageSource="cad_save.svg" BackgroundColor="#147D60" TextColor="White"
                         Style="{StaticResource HeaderButton}" Clicked="OnSaveClicked"/>
             </HorizontalStackLayout>
             <Label Grid.Column="2" Text="CAD  •  NATIVE" TextColor="#8297AD" FontSize="10"
@@ -56,15 +56,15 @@
         <ScrollView Grid.Row="1" Orientation="Horizontal"
                     BackgroundColor="#1B2B3E" HorizontalScrollBarVisibility="Never">
             <HorizontalStackLayout Padding="12,9" Spacing="8">
-                <Button Text="الرسم" ImageSource="cad-draw.svg"
+                <Button x:Name="DrawGroupButton" Text="الرسم" ImageSource="cad_draw.svg"
                         Style="{StaticResource DockButton}" Clicked="OnDrawGroupClicked"/>
-                <Button Text="التعديل والتحديد" ImageSource="cad-edit.svg"
+                <Button x:Name="EditGroupButton" Text="التعديل والتحديد" ImageSource="cad_edit.svg"
                         Style="{StaticResource DockButton}" Clicked="OnEditGroupClicked"/>
-                <Button Text="الطبقات والخصائص" ImageSource="cad-layers.svg"
+                <Button x:Name="LayersGroupButton" Text="الطبقات والخصائص" ImageSource="cad_layers.svg"
                         Style="{StaticResource DockButton}" Clicked="OnLayersGroupClicked"/>
-                <Button Text="الملفات و DXF" ImageSource="cad-file.svg"
+                <Button x:Name="FilesGroupButton" Text="الملفات و DXF" ImageSource="cad_file.svg"
                         Style="{StaticResource DockButton}" Clicked="OnFilesGroupClicked"/>
-                <Button Text="الدقة والإدخال" ImageSource="cad-view.svg"
+                <Button x:Name="ViewGroupButton" Text="الدقة والإدخال" ImageSource="cad_view.svg"
                         Style="{StaticResource DockButton}" Clicked="OnViewGroupClicked"/>
             </HorizontalStackLayout>
         </ScrollView>
