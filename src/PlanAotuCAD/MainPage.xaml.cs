@@ -54,6 +54,8 @@ public partial class MainPage : ContentPage
     private void OnEllipseToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Ellipse);
     private void OnTriangleToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Triangle);
     private void OnArcToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Arc);
+    private void OnPolylineToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Polyline);
+    private void OnPolygonToolClicked(object? sender, EventArgs e) => SetActiveTool(CadTool.Polygon);
 
     private void SetActiveTool(CadTool tool)
     {
@@ -66,6 +68,8 @@ public partial class MainPage : ContentPage
         EllipseButton.BackgroundColor = tool == CadTool.Ellipse ? ActiveColor : InactiveColor;
         TriangleButton.BackgroundColor = tool == CadTool.Triangle ? ActiveColor : InactiveColor;
         ArcButton.BackgroundColor = tool == CadTool.Arc ? ActiveColor : InactiveColor;
+        PolylineButton.BackgroundColor = tool == CadTool.Polyline ? ActiveColor : InactiveColor;
+        PolygonButton.BackgroundColor = tool == CadTool.Polygon ? ActiveColor : InactiveColor;
 
         StatusLabel.Text = tool switch
         {
@@ -76,6 +80,8 @@ public partial class MainPage : ContentPage
             CadTool.Ellipse => "ELLIPSE: حدد زاويتين متقابلتين",
             CadTool.Triangle => "TRIANGLE: حدد حدود المثلث",
             CadTool.Arc => "ARC: حدد طرفي قطر القوس",
+            CadTool.Polyline => "POLYLINE: ارسم مساراً حراً بالسحب",
+            CadTool.Polygon => "POLYGON: حدد المركز ونصف القطر (مضلع سداسي افتراضياً)",
             _ => "Ready"
         };
 
@@ -158,12 +164,13 @@ public partial class MainPage : ContentPage
             CadTool.Ellipse => "X;Y;Width;Height",
             CadTool.Triangle => "X;Y;Width;Height",
             CadTool.Arc => "Center X;Center Y;Radius;Start Angle;Sweep Angle",
+            CadTool.Polygon => "Center X;Center Y;Radius;Sides (3-32)",
             _ => string.Empty
         };
 
         if (string.IsNullOrEmpty(format))
         {
-            await DisplayAlert("الإدخال الرقمي", "اختر أداة LINE أو RECT أو CIRCLE أولاً.", "موافق");
+            await DisplayAlert("الإدخال الرقمي", "اختر أداة هندسية تدعم الإدخال الرقمي. أداة POLYLINE تعتمد على السحب.", "موافق");
             return;
         }
 
@@ -201,6 +208,8 @@ public partial class MainPage : ContentPage
             CadTool.Circle => numbers[2] > 0,
             CadTool.Ellipse or CadTool.Triangle => numbers[2] > 0 && numbers[3] > 0,
             CadTool.Arc => numbers[2] > 0 && numbers[4] > 0 && numbers[4] <= 360,
+            CadTool.Polygon => numbers[2] > 0 && numbers[3] >= 3 && numbers[3] <= 32 &&
+                               MathF.Abs(numbers[3] - MathF.Round(numbers[3])) < 0.001f,
             _ => false
         };
 
@@ -218,6 +227,7 @@ public partial class MainPage : ContentPage
             CadTool.Ellipse => new CadEllipse(numbers[0], numbers[1], numbers[0] + numbers[2], numbers[1] + numbers[3]),
             CadTool.Triangle => new CadTriangle(numbers[0], numbers[1], numbers[0] + numbers[2], numbers[1] + numbers[3]),
             CadTool.Arc => new CadArc { CenterX = numbers[0], CenterY = numbers[1], Radius = numbers[2], StartAngle = numbers[3], SweepAngle = numbers[4] },
+            CadTool.Polygon => CadEditorService.CreateRegularPolygon(new PointF(numbers[0], numbers[1]), numbers[2], (int)numbers[3]),
             _ => null!
         };
 
