@@ -144,7 +144,7 @@ public sealed class CadEditorService
 
     public bool AddLayer(string name, string colorHex = "#F4F6FA")
     {
-        if (string.IsNullOrWhiteSpace(name) ||
+        if (string.IsNullOrWhiteSpace(name) || !IsValidColorHex(colorHex) ||
             Document.Layers.Any(layer => string.Equals(layer.Name, name.Trim(), StringComparison.OrdinalIgnoreCase)))
             return false;
         var before = Snapshot();
@@ -226,8 +226,12 @@ public sealed class CadEditorService
     {
         var layer = Document.Layers.FirstOrDefault(x => x.Id == layerId);
         if (layer is null || layer.Id == "0" || Document.Layers.Count <= 1) return false;
+        var fallback = Document.Layers.FirstOrDefault(x =>
+            x.Id != layerId && x.IsVisible && !x.IsLocked && !x.IsFrozen);
+        if (fallback is null)
+            return false;
+
         var before = Snapshot();
-        var fallback = Document.Layers.First(x => x.Id != layerId);
         foreach (var entity in Document.Entities.Where(x => x.LayerId == layerId))
             entity.LayerId = fallback.Id;
         Document.Layers.Remove(layer);
@@ -239,7 +243,8 @@ public sealed class CadEditorService
     public bool MoveSelectedToLayer(string layerId)
     {
         var target = Document.Layers.FirstOrDefault(x => x.Id == layerId);
-        if (SelectedEntity is null || target is null || target.IsLocked || target.IsFrozen || !target.IsVisible)
+        if (SelectedEntity is null || target is null || target.IsLocked || target.IsFrozen || !target.IsVisible ||
+            IsLayerLocked(SelectedEntity.LayerId) || IsLayerHidden(SelectedEntity.LayerId))
             return false;
         var before = Snapshot();
         SelectedEntity.LayerId = layerId;
@@ -250,7 +255,7 @@ public sealed class CadEditorService
     public bool UpdateSelectedProperties(string? name, string? colorHex, float strokeWidth, bool isFilled, string? layerId = null)
     {
         var targetLayer = layerId is null ? null : Document.Layers.FirstOrDefault(x => x.Id == layerId);
-        if (SelectedEntity is null || IsLayerLocked(SelectedEntity.LayerId) ||
+        if (SelectedEntity is null || IsLayerLocked(SelectedEntity.LayerId) || IsLayerHidden(SelectedEntity.LayerId) ||
             !float.IsFinite(strokeWidth) || strokeWidth <= 0 ||
             (!string.IsNullOrWhiteSpace(colorHex) && !IsValidColorHex(colorHex)) ||
             (layerId is not null && (targetLayer is null || targetLayer.IsLocked || targetLayer.IsFrozen || !targetLayer.IsVisible)))
