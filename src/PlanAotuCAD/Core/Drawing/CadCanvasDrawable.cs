@@ -97,6 +97,7 @@ public sealed class CadCanvasDrawable : IDrawable
                 CadArc => Color.FromArgb("#FB7185"),
                  _ => Colors.White
              });
+        canvas.FillColor = canvas.StrokeColor;
 
         switch (entity)
         {
