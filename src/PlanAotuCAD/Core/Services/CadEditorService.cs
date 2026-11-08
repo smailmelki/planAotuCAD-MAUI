@@ -247,17 +247,20 @@ public sealed class CadEditorService
         return true;
     }
 
-    public bool UpdateSelectedProperties(string? name, string? colorHex, float strokeWidth, bool isFilled)
+    public bool UpdateSelectedProperties(string? name, string? colorHex, float strokeWidth, bool isFilled, string? layerId = null)
     {
+        var targetLayer = layerId is null ? null : Document.Layers.FirstOrDefault(x => x.Id == layerId);
         if (SelectedEntity is null || IsLayerLocked(SelectedEntity.LayerId) ||
             !float.IsFinite(strokeWidth) || strokeWidth <= 0 ||
-            (!string.IsNullOrWhiteSpace(colorHex) && !IsValidColorHex(colorHex)))
+            (!string.IsNullOrWhiteSpace(colorHex) && !IsValidColorHex(colorHex)) ||
+            (layerId is not null && (targetLayer is null || targetLayer.IsLocked || targetLayer.IsFrozen || !targetLayer.IsVisible)))
             return false;
         var before = Snapshot();
         SelectedEntity.Name = name?.Trim() ?? string.Empty;
         SelectedEntity.ColorHex = string.IsNullOrWhiteSpace(colorHex) ? null : colorHex;
         SelectedEntity.StrokeWidth = strokeWidth;
         SelectedEntity.IsFilled = isFilled;
+        if (targetLayer is not null) SelectedEntity.LayerId = targetLayer.Id;
         Record(before);
         return true;
     }
