@@ -1,73 +1,351 @@
-﻿
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="PlanAotuCAD.MainPage"
-    BackgroundColor="#171B24">
+    FlowDirection="LeftToRight"
+    BackgroundColor="#142235">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <!-- شريط القوائم: يظهر على Windows وMac فقط، ويتجاهله Android وiOS. -->
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="ملف">
+            <MenuFlyoutItem Text="مشروع جديد" Clicked="OnNewClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="N"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem Text="فتح..." Clicked="OnOpenClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="O"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem Text="حفظ" Clicked="OnSaveClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="S"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem Text="حفظ باسم..." Clicked="OnSaveAsClicked"/>
+            <MenuFlyoutSeparator/>
+            <MenuFlyoutItem Text="استيراد DXF..." Clicked="OnImportDxfClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="I"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem Text="تصدير DXF..." Clicked="OnExportDxfClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="E"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+        </MenuBarItem>
+        <MenuBarItem Text="تحرير">
+            <MenuFlyoutItem Text="تراجع" Clicked="OnUndoClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="Z"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem Text="إعادة" Clicked="OnRedoClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="Y"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutSeparator/>
+            <MenuFlyoutItem Text="حذف العنصر المحدد" Clicked="OnDeleteClicked"/>
+        </MenuBarItem>
+        <MenuBarItem Text="رسم">
+            <MenuFlyoutItem Text="تحديد" Clicked="OnMenuToolClicked" CommandParameter="Select"/>
+            <MenuFlyoutItem Text="تحريك العرض" Clicked="OnMenuToolClicked" CommandParameter="Pan"/>
+            <MenuFlyoutSeparator/>
+            <MenuFlyoutItem Text="خط" Clicked="OnMenuToolClicked" CommandParameter="Line"/>
+            <MenuFlyoutItem Text="مستطيل" Clicked="OnMenuToolClicked" CommandParameter="Rectangle"/>
+            <MenuFlyoutItem Text="دائرة" Clicked="OnMenuToolClicked" CommandParameter="Circle"/>
+            <MenuFlyoutItem Text="بيضاوي" Clicked="OnMenuToolClicked" CommandParameter="Ellipse"/>
+            <MenuFlyoutItem Text="مثلث" Clicked="OnMenuToolClicked" CommandParameter="Triangle"/>
+            <MenuFlyoutItem Text="قوس" Clicked="OnMenuToolClicked" CommandParameter="Arc"/>
+            <MenuFlyoutItem Text="متعدد الخطوط" Clicked="OnMenuToolClicked" CommandParameter="Polyline"/>
+            <MenuFlyoutItem Text="مضلع" Clicked="OnMenuToolClicked" CommandParameter="Polygon"/>
+            <MenuFlyoutSeparator/>
+            <MenuFlyoutItem Text="إدخال رقمي..." Clicked="OnNumericInputClicked"/>
+        </MenuBarItem>
+        <MenuBarItem Text="عرض">
+            <MenuFlyoutItem Text="ملاءمة العرض" Clicked="OnZoomFitClicked">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="F"/>
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem Text="إظهار/إخفاء الشبكة" Clicked="OnToggleGridClicked"/>
+            <MenuFlyoutItem Text="تشغيل/إيقاف الالتقاط بالشبكة" Clicked="OnToggleSnapClicked"/>
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
 
-        <!-- الشريط العلوي -->
-        <Grid Grid.Row="0"
-              BackgroundColor="#222936"
-              Padding="12"
-              ColumnDefinitions="*,Auto,Auto,Auto">
+    <ContentPage.Resources>
+        <!-- أنماط التطبيق الافتراضية تعتمد على سمة النظام، لذلك تُحدَّد ألوان الواجهة هنا صراحةً. -->
+        <Style x:Key="BarButton" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="#26394F"/>
+            <Setter Property="TextColor" Value="#EAF0F7"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HeightRequest" Value="38"/>
+            <Setter Property="MinimumHeightRequest" Value="38"/>
+            <Setter Property="MinimumWidthRequest" Value="38"/>
+            <Setter Property="ContentLayout" Value="Left,6"/>
+        </Style>
+        <Style x:Key="IconBarButton" TargetType="Button" BasedOn="{StaticResource BarButton}">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="WidthRequest" Value="40"/>
+            <Setter Property="ContentLayout" Value="Left,0"/>
+        </Style>
+        <Style x:Key="SaveBarButton" TargetType="Button" BasedOn="{StaticResource BarButton}">
+            <Setter Property="BackgroundColor" Value="#147D60"/>
+            <Setter Property="TextColor" Value="White"/>
+        </Style>
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource BarButton}">
+            <Setter Property="BackgroundColor" Value="#7F2B36"/>
+            <Setter Property="TextColor" Value="White"/>
+        </Style>
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="TextColor" Value="#DCE8F5"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="0,4"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="HeightRequest" Value="58"/>
+            <Setter Property="MinimumHeightRequest" Value="58"/>
+            <Setter Property="MinimumWidthRequest" Value="48"/>
+            <Setter Property="ContentLayout" Value="Top,2"/>
+        </Style>
+        <Style x:Key="TabButton" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="Transparent"/>
+            <Setter Property="TextColor" Value="#EAF0F7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HeightRequest" Value="40"/>
+            <Setter Property="MinimumHeightRequest" Value="40"/>
+        </Style>
+        <Style x:Key="StatusToggle" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="#24364B"/>
+            <Setter Property="TextColor" Value="#DCE8F5"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="HeightRequest" Value="26"/>
+            <Setter Property="MinimumHeightRequest" Value="26"/>
+            <Setter Property="MinimumWidthRequest" Value="26"/>
+        </Style>
+        <Style x:Key="DarkEntry" TargetType="Entry">
+            <Setter Property="TextColor" Value="#F4F7FB"/>
+            <Setter Property="BackgroundColor" Value="#223449"/>
+            <Setter Property="PlaceholderColor" Value="#8297AD"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HeightRequest" Value="42"/>
+            <Setter Property="MinimumHeightRequest" Value="42"/>
+        </Style>
+        <Style x:Key="FormLabel" TargetType="Label">
+            <Setter Property="TextColor" Value="#AEBCCB"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="Label">
+            <Setter Property="TextColor" Value="#F4F7FB"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontAttributes" Value="Bold"/>
+        </Style>
+    </ContentPage.Resources>
 
-            <Label Text="PlanAotuCAD"
-                   TextColor="White"
-                   FontSize="20"
-                   FontAttributes="Bold"
-                   VerticalOptions="Center" />
+    <Grid x:Name="RootGrid" RowDefinitions="Auto,*,Auto,Auto" ColumnDefinitions="Auto,*,Auto"
+          RowSpacing="0" ColumnSpacing="0">
 
-            <Label Grid.Column="1"
-                   Text="CAD Workspace"
-                   TextColor="#9BA8B8"
-                   FontSize="12"
-                   VerticalOptions="Center"
-                   Margin="0,0,15,0" />
+        <!-- الشريط العلوي: الهوية + أوامر الملف (كمبيوتر) أو الاسم + تراجع/إعادة/حفظ (هاتف) -->
+        <Grid x:Name="TopBar" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+              BackgroundColor="#142235" Padding="10,6" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                <Label x:Name="BrandLabel" Text="MelkiCAD" TextColor="White" FontSize="18"
+                       FontAttributes="Bold" VerticalOptions="Center"/>
+                <Label x:Name="ProjectNameLabel" Text="Drawing" TextColor="#AAB9CA" FontSize="13"
+                       VerticalOptions="Center" LineBreakMode="TailTruncation" MaximumWidthRequest="220"/>
+            </HorizontalStackLayout>
 
-            <Button Grid.Column="2"
-                    x:Name="LineButton"
-                    Text="LINE"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    Clicked="OnLineToolClicked" />
-            <Button Grid.Column="3"
-                    x:Name="RectButton"
-                    Text="RECT"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    CornerRadius="6"
-                    Padding="18,8"
-                    Clicked="OnRectToolClicked" />
+            <ScrollView x:Name="DesktopActions" Grid.Column="1" Orientation="Horizontal"
+                        HorizontalScrollBarVisibility="Never" VerticalOptions="Center">
+                <HorizontalStackLayout Spacing="6">
+                    <Button x:Name="NewButton" Text="جديد" ImageSource="cad_new.svg"
+                            Style="{StaticResource BarButton}" Clicked="OnNewClicked"/>
+                    <Button x:Name="OpenButton" Text="فتح" ImageSource="cad_open.svg"
+                            Style="{StaticResource BarButton}" Clicked="OnOpenClicked"/>
+                    <Button x:Name="SaveButton" Text="حفظ" ImageSource="cad_save.svg"
+                            Style="{StaticResource SaveBarButton}" Clicked="OnSaveClicked"/>
+                    <BoxView WidthRequest="1" HeightRequest="22" Color="#3C5068" VerticalOptions="Center"/>
+                    <Button x:Name="ImportDxfButton" Text="استيراد DXF" ImageSource="cad_import.svg"
+                            Style="{StaticResource BarButton}" Clicked="OnImportDxfClicked"/>
+                    <Button x:Name="ExportDxfButton" Text="تصدير DXF" ImageSource="cad_export.svg"
+                            Style="{StaticResource BarButton}" Clicked="OnExportDxfClicked"/>
+                    <BoxView WidthRequest="1" HeightRequest="22" Color="#3C5068" VerticalOptions="Center"/>
+                    <Button x:Name="FitTopButton" Text="ملاءمة العرض" ImageSource="cad_zoomfit.svg"
+                            Style="{StaticResource BarButton}" Clicked="OnZoomFitClicked"/>
+                    <Button x:Name="DeleteTopButton" Text="حذف" ImageSource="cad_delete.svg"
+                            Style="{StaticResource BarButton}" Clicked="OnDeleteClicked"/>
+                </HorizontalStackLayout>
+            </ScrollView>
+
+            <HorizontalStackLayout Grid.Column="2" Spacing="6" VerticalOptions="Center">
+                <Button x:Name="UndoButton" ImageSource="cad_undo.svg"
+                        Style="{StaticResource IconBarButton}" Clicked="OnUndoClicked"/>
+                <Button x:Name="RedoButton" ImageSource="cad_redo.svg"
+                        Style="{StaticResource IconBarButton}" Clicked="OnRedoClicked"/>
+                <Button x:Name="CompactSaveButton" ImageSource="cad_save.svg" BackgroundColor="#147D60"
+                        Style="{StaticResource IconBarButton}" Clicked="OnSaveClicked"/>
+            </HorizontalStackLayout>
         </Grid>
 
-        <!-- مساحة الرسم -->
-        <GraphicsView
-            x:Name="CadView"
-            Grid.Row="1"
-            HorizontalOptions="Fill"
-            VerticalOptions="Fill" />
+        <!-- لوحة الأدوات (كمبيوتر): تُملأ من الكود -->
+        <ScrollView x:Name="ToolPalette" Grid.Row="1" Grid.Column="0" BackgroundColor="#1B2B3E"
+                    WidthRequest="92" IsVisible="False" VerticalScrollBarVisibility="Never">
+            <VerticalStackLayout x:Name="PaletteStack" Padding="8" Spacing="6"/>
+        </ScrollView>
+
+        <!-- مساحة الرسم: العنصر المركزي في الحالتين -->
+        <Grid x:Name="CanvasHost" Grid.Row="1" Grid.Column="1" BackgroundColor="#171B24">
+            <GraphicsView x:Name="CadView" FlowDirection="LeftToRight"
+                          HorizontalOptions="Fill" VerticalOptions="Fill"/>
+        </Grid>
+
+        <!-- زر ملاءمة العرض العائم (هاتف) -->
+        <Button x:Name="FitButton" Grid.Row="1" Grid.Column="1" ImageSource="cad_zoomfit.svg"
+                BackgroundColor="#D9142235" WidthRequest="48" HeightRequest="48"
+                MinimumWidthRequest="48" MinimumHeightRequest="48" Padding="0" CornerRadius="24"
+                HorizontalOptions="End" VerticalOptions="Start" Margin="0,10,10,0"
+                Clicked="OnZoomFitClicked"/>
+
+        <!-- شريط إجراءات العنصر المحدد (هاتف) -->
+        <Border x:Name="SelectionBar" Grid.Row="1" Grid.Column="1" IsVisible="False"
+                HorizontalOptions="Center" VerticalOptions="End" Margin="0,0,0,12"
+                BackgroundColor="#F2142235" Stroke="#3C5068" StrokeThickness="1"
+                StrokeShape="RoundRectangle 14" Padding="6">
+            <HorizontalStackLayout Spacing="8">
+                <Button Text="خصائص" ImageSource="cad_props.svg" Style="{StaticResource BarButton}"
+                        HeightRequest="46" MinimumHeightRequest="46" Clicked="OnOpenPropertiesClicked"/>
+                <Button Text="حذف" ImageSource="cad_delete.svg" Style="{StaticResource DangerButton}"
+                        HeightRequest="46" MinimumHeightRequest="46" Clicked="OnDeleteClicked"/>
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- صينية الأشكال (هاتف): تظهر عند الضغط على "رسم" -->
+        <Border x:Name="ShapeTray" Grid.Row="1" Grid.Column="1" IsVisible="False"
+                HorizontalOptions="Fill" VerticalOptions="End" Margin="8,0,8,10"
+                BackgroundColor="#F21B2B3E" Stroke="#3C5068" StrokeThickness="1"
+                StrokeShape="RoundRectangle 14" Padding="6">
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout x:Name="TrayStack" Spacing="6"/>
+            </ScrollView>
+        </Border>
+
+        <!-- اللوحة الجانبية: تُثبَّت يميناً على الكمبيوتر، وتصبح ورقة سفلية على الهاتف -->
+        <Border x:Name="SidePanel" Grid.Row="1" Grid.Column="1" IsVisible="False"
+                FlowDirection="RightToLeft" BackgroundColor="#1B2B3E"
+                Stroke="#3C5068" StrokeThickness="1" Padding="0"
+                HorizontalOptions="Fill" VerticalOptions="End">
+            <Grid RowDefinitions="Auto,*">
+                <Grid x:Name="PanelHeader" Padding="8,6" ColumnDefinitions="*,*,Auto"
+                      ColumnSpacing="6" BackgroundColor="#142235">
+                    <Button x:Name="TabLayersButton" Text="الطبقات" Style="{StaticResource TabButton}"
+                            Clicked="OnTabLayersClicked"/>
+                    <Button x:Name="TabPropertiesButton" Grid.Column="1" Text="الخصائص"
+                            Style="{StaticResource TabButton}" Clicked="OnTabPropertiesClicked"/>
+                    <Button Grid.Column="2" ImageSource="cad_close.svg" WidthRequest="44"
+                            Style="{StaticResource IconBarButton}" Clicked="OnCloseSheetClicked"/>
+                </Grid>
+
+                <ScrollView Grid.Row="1">
+                    <VerticalStackLayout Padding="12,10,12,16" Spacing="16">
+
+                        <VerticalStackLayout x:Name="LayersSection" Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Text="الطبقات" Style="{StaticResource SectionTitle}" VerticalOptions="Center"/>
+                                <Button Grid.Column="1" Text="طبقة جديدة" ImageSource="cad_plus.svg"
+                                        Style="{StaticResource BarButton}" HeightRequest="34"
+                                        MinimumHeightRequest="34" Clicked="OnAddLayerClicked"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,52,52,44" Padding="8,0">
+                                <Label Text="الاسم" Style="{StaticResource FormLabel}"/>
+                                <Label Grid.Column="1" Text="ظاهرة" Style="{StaticResource FormLabel}"
+                                       HorizontalTextAlignment="Center"/>
+                                <Label Grid.Column="2" Text="مقفلة" Style="{StaticResource FormLabel}"
+                                       HorizontalTextAlignment="Center"/>
+                            </Grid>
+                            <VerticalStackLayout x:Name="LayersList" Spacing="2"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="PropertiesSection" Spacing="8">
+                            <Label Text="خصائص العنصر" Style="{StaticResource SectionTitle}"/>
+                            <Label x:Name="NoSelectionLabel" Text="حدد عنصراً في الرسم لتعديل خصائصه."
+                                   Style="{StaticResource FormLabel}" FontSize="13"/>
+                            <VerticalStackLayout x:Name="PropertiesForm" Spacing="8" IsVisible="False">
+                                <Label Text="الاسم" Style="{StaticResource FormLabel}"/>
+                                <Entry x:Name="PropertyNameEntry" Style="{StaticResource DarkEntry}"/>
+                                <Label Text="اللون" Style="{StaticResource FormLabel}"/>
+                                <Entry x:Name="PropertyColorEntry" Placeholder="#RRGGBB أو اتركه فارغاً للون الطبقة"
+                                       Style="{StaticResource DarkEntry}"/>
+                                <FlexLayout x:Name="ColorSwatches" Wrap="Wrap" Direction="Row"/>
+                                <Label Text="سمك الخط" Style="{StaticResource FormLabel}"/>
+                                <Entry x:Name="PropertyWidthEntry" Keyboard="Numeric"
+                                       Style="{StaticResource DarkEntry}"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="تعبئة" Style="{StaticResource FormLabel}" FontSize="13"
+                                           VerticalOptions="Center"/>
+                                    <Switch x:Name="PropertyFillSwitch" Grid.Column="1" OnColor="#147D60"
+                                            ThumbColor="#F4F7FB"/>
+                                </Grid>
+                                <Label Text="الطبقة" Style="{StaticResource FormLabel}"/>
+                                <Picker x:Name="PropertyLayerPicker" TextColor="#F4F7FB" TitleColor="#8297AD"
+                                        BackgroundColor="#223449" HeightRequest="42" MinimumHeightRequest="42"/>
+                                <Button Text="تطبيق" BackgroundColor="#147D60" TextColor="White" CornerRadius="8"
+                                        HeightRequest="44" MinimumHeightRequest="44"
+                                        Clicked="OnApplyPropertiesClicked"/>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Grid>
+        </Border>
+
+        <!-- شريط الأدوات السفلي (هاتف): خمسة أهداف لمس كبيرة -->
+        <Grid x:Name="PrimaryBar" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" BackgroundColor="#1B2B3E"
+              Padding="6,4" ColumnSpacing="4" ColumnDefinitions="*,*,*,*,*">
+            <Button x:Name="PrimarySelectButton" Text="تحديد" ImageSource="tool_select.svg"
+                    Style="{StaticResource PrimaryButton}" Clicked="OnPrimarySelectClicked"/>
+            <Button x:Name="PrimaryPanButton" Grid.Column="1" Text="تحريك" ImageSource="tool_pan.svg"
+                    Style="{StaticResource PrimaryButton}" Clicked="OnPrimaryPanClicked"/>
+            <Button x:Name="PrimaryDrawButton" Grid.Column="2" Text="رسم" ImageSource="cad_draw.svg"
+                    Style="{StaticResource PrimaryButton}" Clicked="OnPrimaryDrawClicked"/>
+            <Button x:Name="PrimaryLayersButton" Grid.Column="3" Text="الطبقات" ImageSource="cad_layers.svg"
+                    Style="{StaticResource PrimaryButton}" Clicked="OnPrimaryLayersClicked"/>
+            <Button x:Name="PrimaryMoreButton" Grid.Column="4" Text="المزيد" ImageSource="cad_more.svg"
+                    Style="{StaticResource PrimaryButton}" Clicked="OnPrimaryMoreClicked"/>
+        </Grid>
 
         <!-- شريط الحالة -->
-        <Grid Grid.Row="2"
-              BackgroundColor="#222936"
-              Padding="10"
-              ColumnDefinitions="*,Auto">
-
-            <Label x:Name="StatusLabel"
-                   Text="Ready"
-                   TextColor="#AAB6C5"
-                   FontSize="12"
-                   VerticalOptions="Center" />
-
-            <Label Grid.Column="1"
-                   Text="Units: Meter"
-                   TextColor="#AAB6C5"
-                   FontSize="12"
-                   VerticalOptions="Center" />
+        <Grid x:Name="StatusBar" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" BackgroundColor="#0F1B2B"
+              Padding="12,4" ColumnDefinitions="*,Auto" ColumnSpacing="14">
+            <Label x:Name="StatusLabel" Text="جاهز" TextColor="#DCE5EF" FontSize="12"
+                   VerticalOptions="Center" LineBreakMode="TailTruncation"/>
+            <HorizontalStackLayout Grid.Column="1" Spacing="12" VerticalOptions="Center">
+                <HorizontalStackLayout x:Name="DesktopStatusItems" Spacing="12" VerticalOptions="Center">
+                    <Entry x:Name="CommandEntry" Placeholder="أمر: L R C E T A P G ... أو أرقام"
+                           WidthRequest="230" FontSize="12" HeightRequest="30" MinimumHeightRequest="30"
+                           TextColor="#F4F7FB" BackgroundColor="#223449" PlaceholderColor="#8297AD"
+                           ReturnType="Done" Completed="OnCommandCompleted"/>
+                    <Label x:Name="CoordLabel" Text="X 0   Y 0" TextColor="#B9C8D8" FontSize="12"
+                           VerticalOptions="Center" WidthRequest="170"/>
+                    <Button x:Name="SnapButton" Text="التقاط" Style="{StaticResource StatusToggle}"
+                            Clicked="OnToggleSnapClicked"/>
+                    <Button x:Name="GridButton" Text="الشبكة" Style="{StaticResource StatusToggle}"
+                            Clicked="OnToggleGridClicked"/>
+                    <Label x:Name="ZoomLabel" Text="100%" TextColor="#B9C8D8" FontSize="12"
+                           VerticalOptions="Center" WidthRequest="56"/>
+                </HorizontalStackLayout>
+                <Label x:Name="EntityCountLabel" Text="0 عنصر" TextColor="#B9C8D8" FontSize="12"
+                       VerticalOptions="Center"/>
+            </HorizontalStackLayout>
         </Grid>
-
     </Grid>
 </ContentPage>

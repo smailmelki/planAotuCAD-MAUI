@@ -1,151 +1,211 @@
-
 using Microsoft.Maui.Graphics;
+using PlanAotuCAD.Core.Geometry;
 using PlanAotuCAD.Core.Models;
 
 namespace PlanAotuCAD.Core.Drawing;
 
-public class CadCanvasDrawable : IDrawable
+public sealed class CadCanvasDrawable : IDrawable
 {
+    public CadDocument Document { get; set; }
+    public CadCoordinateTransformer Camera { get; }
+    public CadEntity? PreviewEntity { get; set; }
     public float GridSpacing { get; set; } = 25f;
-// إعدادات الكاميرا
-    public float Zoom { get; set; } = 1f;
+    public bool ShowGrid { get; set; } = true;
 
-    public float PanX { get; set; } = 0f;
+    private const float MinGridPixels = 12f;
+    private static readonly Color MinorGridColor = Color.FromArgb("#252D39");
+    private static readonly Color MajorGridColor = Color.FromArgb("#36414F");
 
-    public float PanY { get; set; } = 0f;
-    public List<CadLine> Lines { get; } = new();
-
-    public CadLine? PreviewLine { get; set; }
-
-public List<CadRectangle> Rectangles { get; } = new();
-
-public CadRectangle? PreviewRectangle { get; set; }
-
-public void Draw(ICanvas canvas, RectF dirtyRect)
-{
-    float width = dirtyRect.Width;
-    float height = dirtyRect.Height;
-
-    // رسم الخلفية
-    canvas.FillColor = Color.FromArgb("#171B24");
-    canvas.FillRectangle(dirtyRect);
-
-    // حفظ حالة الرسم
-    canvas.SaveState();
-
-    // تطبيق إحداثيات الكاميرا
-    canvas.Translate(
-        width / 2 + PanX,
-        height / 2 + PanY);
-
-    canvas.Scale(Zoom, -Zoom);
-
-    // رسم جميع العناصر في نظام إحداثيات موحد
-    DrawGrid(canvas, width, height);
-    DrawAxes(canvas, width, height);
-    DrawLines(canvas, width, height);
-    DrawRectangles(canvas, width, height);
-
-    // استعادة حالة الرسم
-    canvas.RestoreState();
-}
-private void DrawGrid(ICanvas canvas, float width, float height)
-{
-    float left = (-width / 2 - PanX) / Zoom;
-    float right = (width / 2 - PanX) / Zoom;
-
-    float bottom = (-height / 2 - PanY) / Zoom;
-    float top = (height / 2 - PanY) / Zoom;
-
-    canvas.StrokeColor = Color.FromArgb("#29313D");
-    canvas.StrokeSize = 1 / Zoom;
-
-    float startX = MathF.Floor(left / GridSpacing) * GridSpacing;
-    float startY = MathF.Floor(bottom / GridSpacing) * GridSpacing;
-
-    for (float x = startX; x <= right; x += GridSpacing)
-        canvas.DrawLine(x, bottom, x, top);
-
-    for (float y = startY; y <= top; y += GridSpacing)
-        canvas.DrawLine(left, y, right, y);
-}
-
-private void DrawAxes(ICanvas canvas, float width, float height)
-{
-    float left = (-width / 2 - PanX) / Zoom;
-    float right = (width / 2 - PanX) / Zoom;
-
-    float bottom = (-height / 2 - PanY) / Zoom;
-    float top = (height / 2 - PanY) / Zoom;
-
-    canvas.StrokeColor = Color.FromArgb("#D65C5C");
-    canvas.StrokeSize = 1.5f / Zoom;
-    canvas.DrawLine(left, 0, right, 0);
-
-    canvas.StrokeColor = Color.FromArgb("#55A6D9");
-    canvas.StrokeSize = 1.5f / Zoom;
-    canvas.DrawLine(0, bottom, 0, top);
-
-    canvas.FillColor = Colors.White;
-    canvas.FillCircle(0, 0, 3 / Zoom);
-}
-    private void DrawLines(ICanvas canvas, float width, float height)
-{
-    canvas.StrokeColor = Color.FromArgb("#F4F6FA");
-    canvas.StrokeSize = 2;
-
-    // رسم الخطوط المحفوظة
-    foreach (var line in Lines)
+    /// <summary>تباعد الشبكة المعروض: يتضاعف عند التصغير حتى لا تتكدس الخطوط.</summary>
+    public float EffectiveGridSpacing
     {
-        canvas.DrawLine(
-            line.StartX,
-            line.StartY,
-            line.EndX,
-            line.EndY);
+        get
+        {
+            var spacing = float.IsFinite(GridSpacing) && GridSpacing > 0 ? GridSpacing : 25f;
+            var zoom = Math.Max(Camera.Zoom, 0.0001f);
+            while (spacing * zoom < MinGridPixels && spacing < 1e9f)
+                spacing *= 2f;
+            return spacing;
+        }
     }
 
-    // رسم معاينة الخط أثناء السحب
-    if (PreviewLine != null)
+    public CadCanvasDrawable(CadDocument document, CadCoordinateTransformer camera)
     {
-        canvas.StrokeColor = Color.FromArgb("#FFD166");
-        canvas.StrokeSize = 2;
-
-        canvas.DrawLine(
-            PreviewLine.StartX,
-            PreviewLine.StartY,
-            PreviewLine.EndX,
-            PreviewLine.EndY);
-    }
-}
-  
-  private void DrawRectangles(ICanvas canvas, float width, float height)
-{
-    // رسم المستطيلات المحفوظة
-    canvas.StrokeColor = Color.FromArgb("#4ADE80");
-    canvas.StrokeSize = 2;
-
-    foreach (var rect in Rectangles)
-    {
-        canvas.DrawRectangle(
-            rect.Left,
-            rect.Bottom,
-            rect.Width,
-            rect.Height);
+        Document = document;
+        Camera = camera;
     }
 
-    // رسم معاينة المستطيل أثناء السحب
-    if (PreviewRectangle != null)
+    public void Draw(ICanvas canvas, RectF dirtyRect)
     {
-        var rect = PreviewRectangle;
+        canvas.SaveState();
+        canvas.FillColor = Color.FromArgb("#171B24");
+        canvas.FillRectangle(dirtyRect);
+        canvas.Translate(dirtyRect.Width / 2f + Camera.PanX, dirtyRect.Height / 2f + Camera.PanY);
+        canvas.Scale(Camera.Zoom, -Camera.Zoom);
 
-        canvas.StrokeColor = Color.FromArgb("#FFD166");
-        canvas.StrokeSize = 2;
+        DrawGrid(canvas, dirtyRect.Width, dirtyRect.Height);
+        DrawAxes(canvas, dirtyRect.Width, dirtyRect.Height);
 
-        canvas.DrawRectangle(
-            rect.Left,
-            rect.Bottom,
-            rect.Width,
-            rect.Height);
+        foreach (var entity in Document.Entities)
+        {
+            var layer = Document.GetLayer(entity.LayerId);
+            if (layer.IsVisible && !layer.IsFrozen)
+                DrawEntity(canvas, entity, layer);
+        }
+
+        if (PreviewEntity is not null)
+        {
+            canvas.SaveState();
+            canvas.Alpha = 0.8f;
+            DrawEntity(canvas, PreviewEntity, null, Color.FromArgb("#FFD166"));
+            canvas.RestoreState();
+        }
+
+        canvas.RestoreState();
     }
-}
+
+    private void DrawGrid(ICanvas canvas, float width, float height)
+    {
+        if (!ShowGrid || !float.IsFinite(Camera.Zoom) || Camera.Zoom <= 0)
+            return;
+
+        var spacing = EffectiveGridSpacing;
+        var left = (-width / 2f - Camera.PanX) / Camera.Zoom;
+        var right = (width / 2f - Camera.PanX) / Camera.Zoom;
+        var bottom = (-height / 2f - Camera.PanY) / Camera.Zoom;
+        var top = (height / 2f - Camera.PanY) / Camera.Zoom;
+        canvas.StrokeSize = 1f / Camera.Zoom;
+
+        var firstX = (long)MathF.Floor(left / spacing);
+        var lastX = (long)MathF.Ceiling(right / spacing);
+        var firstY = (long)MathF.Floor(bottom / spacing);
+        var lastY = (long)MathF.Ceiling(top / spacing);
+        if (lastX - firstX > 1500 || lastY - firstY > 1500)
+            return;
+
+        // كل رابع خط أوضح من غيره ليسهل قراءة المقياس.
+        for (var i = firstX; i <= lastX; i++)
+        {
+            canvas.StrokeColor = i % 4 == 0 ? MajorGridColor : MinorGridColor;
+            var x = i * spacing;
+            canvas.DrawLine(x, bottom, x, top);
+        }
+
+        for (var i = firstY; i <= lastY; i++)
+        {
+            canvas.StrokeColor = i % 4 == 0 ? MajorGridColor : MinorGridColor;
+            var y = i * spacing;
+            canvas.DrawLine(left, y, right, y);
+        }
+    }
+
+    private void DrawAxes(ICanvas canvas, float width, float height)
+    {
+        var left = (-width / 2f - Camera.PanX) / Camera.Zoom;
+        var right = (width / 2f - Camera.PanX) / Camera.Zoom;
+        var bottom = (-height / 2f - Camera.PanY) / Camera.Zoom;
+        var top = (height / 2f - Camera.PanY) / Camera.Zoom;
+        canvas.StrokeSize = 1.5f / Camera.Zoom;
+        canvas.StrokeColor = Color.FromArgb("#D65C5C");
+        canvas.DrawLine(left, 0, right, 0);
+        canvas.StrokeColor = Color.FromArgb("#55A6D9");
+        canvas.DrawLine(0, bottom, 0, top);
+    }
+
+    private void DrawEntity(ICanvas canvas, CadEntity entity, CadLayer? layer, Color? overrideColor = null)
+    {
+        canvas.StrokeSize = Math.Max(0.25f, entity.StrokeWidth) / Camera.Zoom;
+        var colorHex = entity.ColorHex ?? layer?.ColorHex;
+        var entityColor = overrideColor ??
+            (entity.IsSelected ? Color.FromArgb("#FBBF24") :
+             !string.IsNullOrWhiteSpace(colorHex) ? Color.FromArgb(colorHex) :
+             entity switch
+             {
+                 CadLine => Color.FromArgb("#F4F6FA"),
+                 CadRectangle => Color.FromArgb("#4ADE80"),
+                 CadCircle => Color.FromArgb("#60A5FA"),
+                 CadEllipse => Color.FromArgb("#A78BFA"),
+                 CadTriangle => Color.FromArgb("#F59E0B"),
+                 CadArc => Color.FromArgb("#FB7185"),
+                 CadPolyline => Color.FromArgb("#34D399"),
+                 _ => Colors.White
+             });
+        canvas.StrokeColor = entityColor;
+        canvas.FillColor = entityColor;
+
+        switch (entity)
+        {
+            case CadLine line:
+                canvas.DrawLine(line.StartX, line.StartY, line.EndX, line.EndY);
+                break;
+            case CadRectangle rectangle:
+                if (entity.IsFilled)
+                    canvas.FillRectangle(rectangle.Left, rectangle.Bottom, rectangle.Width, rectangle.Height);
+                else
+                    canvas.DrawRectangle(rectangle.Left, rectangle.Bottom, rectangle.Width, rectangle.Height);
+                break;
+            case CadCircle circle:
+                if (entity.IsFilled)
+                    canvas.FillCircle(circle.CenterX, circle.CenterY, circle.Radius);
+                else
+                    canvas.DrawCircle(circle.CenterX, circle.CenterY, circle.Radius);
+                break;
+            case CadEllipse ellipse:
+                var ellipseRect = new RectF(ellipse.CenterX - ellipse.RadiusX, ellipse.CenterY - ellipse.RadiusY,
+                    ellipse.RadiusX * 2f, ellipse.RadiusY * 2f);
+                if (entity.IsFilled) canvas.FillEllipse(ellipseRect.X, ellipseRect.Y, ellipseRect.Width, ellipseRect.Height);
+                else canvas.DrawEllipse(ellipseRect.X, ellipseRect.Y, ellipseRect.Width, ellipseRect.Height);
+                break;
+            case CadTriangle triangle:
+                var a = triangle.A; var b = triangle.B; var c = triangle.C;
+                if (entity.IsFilled)
+                {
+                    var trianglePath = new PathF();
+                    trianglePath.MoveTo(a.X, a.Y);
+                    trianglePath.LineTo(b.X, b.Y);
+                    trianglePath.LineTo(c.X, c.Y);
+                    trianglePath.Close();
+                    canvas.FillPath(trianglePath);
+                }
+                else
+                {
+                    canvas.DrawLine(a.X, a.Y, b.X, b.Y);
+                    canvas.DrawLine(b.X, b.Y, c.X, c.Y);
+                    canvas.DrawLine(c.X, c.Y, a.X, a.Y);
+                }
+                break;
+            case CadArc arc:
+                DrawArcSegments(canvas, arc);
+                break;
+            case CadPolyline polyline:
+                if (polyline.Points.Count >= 2)
+                {
+                    var path = new PathF();
+                    path.MoveTo(polyline.Points[0].X, polyline.Points[0].Y);
+                    for (var i = 1; i < polyline.Points.Count; i++)
+                        path.LineTo(polyline.Points[i].X, polyline.Points[i].Y);
+                    if (polyline.Closed) path.Close();
+                    if (polyline.Closed && entity.IsFilled) canvas.FillPath(path);
+                    else canvas.DrawPath(path);
+                }
+                break;
+        }
+    }
+
+    private static void DrawArcSegments(ICanvas canvas, CadArc arc)
+    {
+        const int segments = 48;
+        var start = arc.StartAngle * MathF.PI / 180f;
+        var sweep = arc.SweepAngle * MathF.PI / 180f;
+        var previous = new PointF(arc.CenterX + arc.Radius * MathF.Cos(start),
+                                  arc.CenterY + arc.Radius * MathF.Sin(start));
+        for (var i = 1; i <= segments; i++)
+        {
+            var angle = start + sweep * i / segments;
+            var next = new PointF(arc.CenterX + arc.Radius * MathF.Cos(angle),
+                                  arc.CenterY + arc.Radius * MathF.Sin(angle));
+            canvas.DrawLine(previous.X, previous.Y, next.X, next.Y);
+            previous = next;
+        }
+    }
 }
