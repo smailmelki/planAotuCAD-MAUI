@@ -1,151 +1,121 @@
-
 using Microsoft.Maui.Graphics;
+using PlanAotuCAD.Core.Geometry;
 using PlanAotuCAD.Core.Models;
 
 namespace PlanAotuCAD.Core.Drawing;
 
-public class CadCanvasDrawable : IDrawable
+public sealed class CadCanvasDrawable : IDrawable
 {
+    public CadDocument Document { get; set; }
+    public CadCoordinateTransformer Camera { get; }
+
+    public CadEntity? PreviewEntity { get; set; }
     public float GridSpacing { get; set; } = 25f;
-// إعدادات الكاميرا
-    public float Zoom { get; set; } = 1f;
 
-    public float PanX { get; set; } = 0f;
-
-    public float PanY { get; set; } = 0f;
-    public List<CadLine> Lines { get; } = new();
-
-    public CadLine? PreviewLine { get; set; }
-
-public List<CadRectangle> Rectangles { get; } = new();
-
-public CadRectangle? PreviewRectangle { get; set; }
-
-public void Draw(ICanvas canvas, RectF dirtyRect)
-{
-    float width = dirtyRect.Width;
-    float height = dirtyRect.Height;
-
-    // رسم الخلفية
-    canvas.FillColor = Color.FromArgb("#171B24");
-    canvas.FillRectangle(dirtyRect);
-
-    // حفظ حالة الرسم
-    canvas.SaveState();
-
-    // تطبيق إحداثيات الكاميرا
-    canvas.Translate(
-        width / 2 + PanX,
-        height / 2 + PanY);
-
-    canvas.Scale(Zoom, -Zoom);
-
-    // رسم جميع العناصر في نظام إحداثيات موحد
-    DrawGrid(canvas, width, height);
-    DrawAxes(canvas, width, height);
-    DrawLines(canvas, width, height);
-    DrawRectangles(canvas, width, height);
-
-    // استعادة حالة الرسم
-    canvas.RestoreState();
-}
-private void DrawGrid(ICanvas canvas, float width, float height)
-{
-    float left = (-width / 2 - PanX) / Zoom;
-    float right = (width / 2 - PanX) / Zoom;
-
-    float bottom = (-height / 2 - PanY) / Zoom;
-    float top = (height / 2 - PanY) / Zoom;
-
-    canvas.StrokeColor = Color.FromArgb("#29313D");
-    canvas.StrokeSize = 1 / Zoom;
-
-    float startX = MathF.Floor(left / GridSpacing) * GridSpacing;
-    float startY = MathF.Floor(bottom / GridSpacing) * GridSpacing;
-
-    for (float x = startX; x <= right; x += GridSpacing)
-        canvas.DrawLine(x, bottom, x, top);
-
-    for (float y = startY; y <= top; y += GridSpacing)
-        canvas.DrawLine(left, y, right, y);
-}
-
-private void DrawAxes(ICanvas canvas, float width, float height)
-{
-    float left = (-width / 2 - PanX) / Zoom;
-    float right = (width / 2 - PanX) / Zoom;
-
-    float bottom = (-height / 2 - PanY) / Zoom;
-    float top = (height / 2 - PanY) / Zoom;
-
-    canvas.StrokeColor = Color.FromArgb("#D65C5C");
-    canvas.StrokeSize = 1.5f / Zoom;
-    canvas.DrawLine(left, 0, right, 0);
-
-    canvas.StrokeColor = Color.FromArgb("#55A6D9");
-    canvas.StrokeSize = 1.5f / Zoom;
-    canvas.DrawLine(0, bottom, 0, top);
-
-    canvas.FillColor = Colors.White;
-    canvas.FillCircle(0, 0, 3 / Zoom);
-}
-    private void DrawLines(ICanvas canvas, float width, float height)
-{
-    canvas.StrokeColor = Color.FromArgb("#F4F6FA");
-    canvas.StrokeSize = 2;
-
-    // رسم الخطوط المحفوظة
-    foreach (var line in Lines)
+    public CadCanvasDrawable(CadDocument document, CadCoordinateTransformer camera)
     {
-        canvas.DrawLine(
-            line.StartX,
-            line.StartY,
-            line.EndX,
-            line.EndY);
+        Document = document;
+        Camera = camera;
     }
 
-    // رسم معاينة الخط أثناء السحب
-    if (PreviewLine != null)
+    public void Draw(ICanvas canvas, RectF dirtyRect)
     {
-        canvas.StrokeColor = Color.FromArgb("#FFD166");
-        canvas.StrokeSize = 2;
+        canvas.SaveState();
 
-        canvas.DrawLine(
-            PreviewLine.StartX,
-            PreviewLine.StartY,
-            PreviewLine.EndX,
-            PreviewLine.EndY);
+        canvas.FillColor = Color.FromArgb("#171B24");
+        canvas.FillRectangle(dirtyRect);
+
+        canvas.Translate(
+            dirtyRect.Width / 2f + Camera.PanX,
+            dirtyRect.Height / 2f + Camera.PanY);
+        canvas.Scale(Camera.Zoom, -Camera.Zoom);
+
+        DrawGrid(canvas, dirtyRect.Width, dirtyRect.Height);
+        DrawAxes(canvas, dirtyRect.Width, dirtyRect.Height);
+
+        foreach (var entity in Document.Entities)
+            DrawEntity(canvas, entity);
+
+        if (PreviewEntity is not null)
+        {
+            canvas.SaveState();
+            canvas.Alpha = 0.8f;
+            DrawEntity(canvas, PreviewEntity, Color.FromArgb("#FFD166"));
+            canvas.RestoreState();
+        }
+
+        canvas.RestoreState();
     }
-}
-  
-  private void DrawRectangles(ICanvas canvas, float width, float height)
-{
-    // رسم المستطيلات المحفوظة
-    canvas.StrokeColor = Color.FromArgb("#4ADE80");
-    canvas.StrokeSize = 2;
 
-    foreach (var rect in Rectangles)
+    private void DrawGrid(ICanvas canvas, float width, float height)
     {
-        canvas.DrawRectangle(
-            rect.Left,
-            rect.Bottom,
-            rect.Width,
-            rect.Height);
+        if (!float.IsFinite(Camera.Zoom) || Camera.Zoom <= 0 ||
+            !float.IsFinite(GridSpacing) || GridSpacing <= 0)
+            return;
+
+        var left = (-width / 2f - Camera.PanX) / Camera.Zoom;
+        var right = (width / 2f - Camera.PanX) / Camera.Zoom;
+        var bottom = (-height / 2f - Camera.PanY) / Camera.Zoom;
+        var top = (height / 2f - Camera.PanY) / Camera.Zoom;
+
+        canvas.StrokeColor = Color.FromArgb("#29313D");
+        canvas.StrokeSize = 1f / Camera.Zoom;
+
+        var startX = MathF.Floor(left / GridSpacing) * GridSpacing;
+        var startY = MathF.Floor(bottom / GridSpacing) * GridSpacing;
+
+        for (var x = startX; x <= right && x - startX <= GridSpacing * 500; x += GridSpacing)
+            canvas.DrawLine(x, bottom, x, top);
+
+        for (var y = startY; y <= top && y - startY <= GridSpacing * 500; y += GridSpacing)
+            canvas.DrawLine(left, y, right, y);
     }
 
-    // رسم معاينة المستطيل أثناء السحب
-    if (PreviewRectangle != null)
+    private void DrawAxes(ICanvas canvas, float width, float height)
     {
-        var rect = PreviewRectangle;
+        var left = (-width / 2f - Camera.PanX) / Camera.Zoom;
+        var right = (width / 2f - Camera.PanX) / Camera.Zoom;
+        var bottom = (-height / 2f - Camera.PanY) / Camera.Zoom;
+        var top = (height / 2f - Camera.PanY) / Camera.Zoom;
 
-        canvas.StrokeColor = Color.FromArgb("#FFD166");
-        canvas.StrokeSize = 2;
+        canvas.StrokeSize = 1.5f / Camera.Zoom;
+        canvas.StrokeColor = Color.FromArgb("#D65C5C");
+        canvas.DrawLine(left, 0, right, 0);
 
-        canvas.DrawRectangle(
-            rect.Left,
-            rect.Bottom,
-            rect.Width,
-            rect.Height);
+        canvas.StrokeColor = Color.FromArgb("#55A6D9");
+        canvas.DrawLine(0, bottom, 0, top);
     }
-}
+
+    private void DrawEntity(ICanvas canvas, CadEntity entity, Color? overrideColor = null)
+    {
+        canvas.StrokeSize = (entity.IsSelected ? 3f : 2f) / Camera.Zoom;
+        canvas.StrokeColor = overrideColor ?? (entity.IsSelected
+            ? Color.FromArgb("#FBBF24")
+            : entity switch
+            {
+                CadLine => Color.FromArgb("#F4F6FA"),
+                CadRectangle => Color.FromArgb("#4ADE80"),
+                CadCircle => Color.FromArgb("#60A5FA"),
+                _ => Colors.White
+            });
+
+        switch (entity)
+        {
+            case CadLine line:
+                canvas.DrawLine(line.StartX, line.StartY, line.EndX, line.EndY);
+                break;
+
+            case CadRectangle rectangle:
+                canvas.DrawRectangle(
+                    rectangle.Left,
+                    rectangle.Bottom,
+                    rectangle.Width,
+                    rectangle.Height);
+                break;
+
+            case CadCircle circle:
+                canvas.DrawCircle(circle.CenterX, circle.CenterY, circle.Radius);
+                break;
+        }
+    }
 }

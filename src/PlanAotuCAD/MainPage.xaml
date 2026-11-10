@@ -1,4 +1,3 @@
-﻿
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -6,68 +5,65 @@
     BackgroundColor="#171B24">
 
     <Grid RowDefinitions="Auto,*,Auto">
-
-        <!-- الشريط العلوي -->
         <Grid Grid.Row="0"
               BackgroundColor="#222936"
-              Padding="12"
-              ColumnDefinitions="*,Auto,Auto,Auto">
+              Padding="10"
+              RowDefinitions="Auto,Auto">
 
-            <Label Text="PlanAotuCAD"
-                   TextColor="White"
-                   FontSize="20"
-                   FontAttributes="Bold"
-                   VerticalOptions="Center" />
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Text="PlanAotuCAD"
+                       TextColor="White"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" />
 
-            <Label Grid.Column="1"
-                   Text="CAD Workspace"
-                   TextColor="#9BA8B8"
-                   FontSize="12"
-                   VerticalOptions="Center"
-                   Margin="0,0,15,0" />
+                <Label Grid.Column="1"
+                       Text="CAD Workspace"
+                       TextColor="#9BA8B8"
+                       FontSize="12"
+                       VerticalOptions="Center" />
+            </Grid>
 
-            <Button Grid.Column="2"
-                    x:Name="LineButton"
-                    Text="LINE"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    Clicked="OnLineToolClicked" />
-            <Button Grid.Column="3"
-                    x:Name="RectButton"
-                    Text="RECT"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White"
-                    CornerRadius="6"
-                    Padding="18,8"
-                    Clicked="OnRectToolClicked" />
+            <ScrollView Grid.Row="1"
+                        Orientation="Horizontal"
+                        HorizontalScrollBarVisibility="Never"
+                        Margin="0,8,0,0">
+                <HorizontalStackLayout Spacing="6">
+                    <Button x:Name="SelectButton" Text="SELECT" Clicked="OnSelectToolClicked" />
+                    <Button x:Name="LineButton" Text="LINE" Clicked="OnLineToolClicked" />
+                    <Button x:Name="RectButton" Text="RECT" Clicked="OnRectToolClicked" />
+                    <Button x:Name="CircleButton" Text="CIRCLE" Clicked="OnCircleToolClicked" />
+                    <Button Text="NUMERIC" Clicked="OnNumericInputClicked" />
+                    <Button Text="DELETE" BackgroundColor="#B91C1C" Clicked="OnDeleteClicked" />
+                    <Button Text="OPEN DRAWING" Clicked="OnOpenClicked" />
+                    <Button Text="IMPORT DXF" Clicked="OnImportDxfClicked" />
+                    <Button Text="SAVE DRAWING" BackgroundColor="#15803D" Clicked="OnSaveClicked" />
+                    <Button Text="EXPORT DXF" BackgroundColor="#15803D" Clicked="OnExportDxfClicked" />
+                </HorizontalStackLayout>
+            </ScrollView>
         </Grid>
 
-        <!-- مساحة الرسم -->
-        <GraphicsView
-            x:Name="CadView"
-            Grid.Row="1"
-            HorizontalOptions="Fill"
-            VerticalOptions="Fill" />
+        <GraphicsView x:Name="CadView"
+                      Grid.Row="1"
+                      HorizontalOptions="Fill"
+                      VerticalOptions="Fill" />
 
-        <!-- شريط الحالة -->
         <Grid Grid.Row="2"
               BackgroundColor="#222936"
               Padding="10"
               ColumnDefinitions="*,Auto">
-
             <Label x:Name="StatusLabel"
                    Text="Ready"
                    TextColor="#AAB6C5"
                    FontSize="12"
                    VerticalOptions="Center" />
 
-            <Label Grid.Column="1"
-                   Text="Units: Meter"
+            <Label x:Name="EntityCountLabel"
+                   Grid.Column="1"
+                   Text="0 entities"
                    TextColor="#AAB6C5"
                    FontSize="12"
                    VerticalOptions="Center" />
         </Grid>
-
     </Grid>
 </ContentPage>
